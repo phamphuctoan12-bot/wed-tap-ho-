@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Trị Tiệm Tạp Hóa - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark bg-success shadow-sm py-2">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/admin.html">
+                <i class="bi bi-shop me-2"></i> TRANG QUẢN TRỊ TẠP HÓA
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold">
+                    <i class="bi bi-box-arrow-left me-1"></i> Về Trang Bán Hàng
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+
+        <!-- Stats Overview Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="stats-card bg-primary">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-uppercase opacity-75">Tổng mặt hàng</small>
+                            <h3 class="fw-bold mb-0" id="statProducts">0</h3>
+                        </div>
+                        <i class="bi bi-boxes fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-success">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-uppercase opacity-75">Tổng đơn hàng</small>
+                            <h3 class="fw-bold mb-0" id="statOrders">0</h3>
+                        </div>
+                        <i class="bi bi-receipt fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-danger">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-uppercase opacity-75">Đơn chờ duyệt</small>
+                            <h3 class="fw-bold mb-0" id="statPending">0</h3>
+                        </div>
+                        <i class="bi bi-hourglass-split fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-dark">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-uppercase opacity-75">Doanh thu</small>
+                            <h3 class="fw-bold mb-0" id="statRevenue">0 đ</h3>
+                        </div>
+                        <i class="bi bi-cash-stack fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills mb-3 bg-white p-2 rounded-3 shadow-sm" id="adminTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active fw-bold" id="tab-orders" data-bs-toggle="pill" data-bs-target="#ordersPane">
+                    <i class="bi bi-receipt-cutoff me-1"></i> Quản Lý Đơn Hàng
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold" id="tab-products" data-bs-toggle="pill" data-bs-target="#productsPane">
+                    <i class="bi bi-box-seam me-1"></i> Sản Phẩm & Tồn Kho
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold" id="tab-vouchers" data-bs-toggle="pill" data-bs-target="#vouchersPane" onclick="loadAdminVouchers()">
+                    <i class="bi bi-ticket-perforated me-1"></i> Khuyến Mãi & Voucher
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold" id="tab-customers" data-bs-toggle="pill" data-bs-target="#customersPane" onclick="loadAdminCustomers()">
+                    <i class="bi bi-people me-1"></i> Khách Hàng & Tích Điểm
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold" id="tab-reports" data-bs-toggle="pill" data-bs-target="#reportsPane" onclick="loadAdminReports()">
+                    <i class="bi bi-bar-chart-line me-1"></i> Báo Cáo & Thống Kê
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="adminTabsContent">
+
+            <!-- TAB 1: ĐƠN HÀNG -->
+            <div class="tab-pane fade show active" id="ordersPane">
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-success"><i class="bi bi-list-check me-2"></i> Quản Lý Đơn Đặt Hàng</h6>
+                        <button class="btn btn-sm btn-outline-success" onclick="loadAdminOrders()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã ĐH</th>
+                                        <th>Khách hàng & SĐT</th>
+                                        <th>Địa chỉ giao</th>
+                                        <th>Mặt hàng đã mua</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Thanh toán</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersTableBody">
+                                    <tr><td colspan="8" class="text-center py-4 text-muted">Đang tải đơn hàng...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: QUẢN LÝ HÀNG HÓA -->
+            <div class="tab-pane fade" id="productsPane">
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="fw-bold mb-0 text-success"><i class="bi bi-boxes me-2"></i> Danh Sách Mặt Hàng Tạp Hóa</h6>
+                            <small class="text-muted">Các mặt hàng có tồn kho &le; 20 sẽ được gắn nhãn cảnh báo đỏ</small>
+                        </div>
+                        <button class="btn btn-sm btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addProductModal" onclick="resetProductForm()">
+                            <i class="bi bi-plus-circle me-1"></i> Thêm Món Hàng Mới
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã</th>
+                                        <th>Icon</th>
+                                        <th>Tên sản phẩm</th>
+                                        <th>Loại hàng</th>
+                                        <th>ĐVT</th>
+                                        <th>Giá bán</th>
+                                        <th>Tồn kho</th>
+                                        <th>Hạn sử dụng</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTableBody">
+                                    <tr><td colspan="9" class="text-center py-4 text-muted">Đang tải sản phẩm...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: KHUYẾN MÃI & VOUCHER -->
+            <div class="tab-pane fade" id="vouchersPane">
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-success"><i class="bi bi-ticket-perforated me-2"></i> Quản Lý Mã Giảm Giá & Voucher</h6>
+                        <button class="btn btn-sm btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addVoucherModal">
+                            <i class="bi bi-plus-circle me-1"></i> Tạo Voucher Mới
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã Voucher</th>
+                                        <th>Mức giảm</th>
+                                        <th>Đơn hàng tối thiểu</th>
+                                        <th>Mô tả chương trình</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vouchersTableBody">
+                                    <tr><td colspan="5" class="text-center py-4 text-muted">Đang tải vouchers...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: KHÁCH HÀNG & TÍCH ĐIỂM -->
+            <div class="tab-pane fade" id="customersPane">
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="fw-bold mb-0 text-success"><i class="bi bi-people me-2"></i> Danh Sách Khách Hàng & Điểm Tích Lũy</h6>
+                        <small class="text-muted">Cứ 10.000đ mua hàng = 1 điểm tích lũy | Hạng Đồng (&lt;50 điểm), Bạc (50-150 điểm), Vàng (&gt;150 điểm)</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã KH</th>
+                                        <th>Họ và tên</th>
+                                        <th>Tên đăng nhập</th>
+                                        <th>Số điện thoại</th>
+                                        <th>Địa chỉ nhận hàng</th>
+                                        <th>Số đơn mua</th>
+                                        <th>Tổng chi tiêu</th>
+                                        <th>Điểm tích lũy</th>
+                                        <th>Hạng thành viên</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customersTableBody">
+                                    <tr><td colspan="9" class="text-center py-4 text-muted">Đang tải danh sách khách hàng...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: BÁO CÁO & THỐNG KÊ CHI TIẾT -->
+            <div class="tab-pane fade" id="reportsPane">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded-3 shadow-sm border text-center">
+                            <small class="text-muted text-uppercase fw-bold">Tổng Doanh Thu</small>
+                            <h3 class="text-success fw-bold mb-0" id="repRevenue">0 đ</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded-3 shadow-sm border text-center">
+                            <small class="text-muted text-uppercase fw-bold">Chi Phí Vốn Ước Tính (68%)</small>
+                            <h3 class="text-secondary fw-bold mb-0" id="repCost">0 đ</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded-3 shadow-sm border text-center">
+                            <small class="text-muted text-uppercase fw-bold">Lợi Nhuận Ước Tính (32%)</small>
+                            <h3 class="text-danger fw-bold mb-0" id="repProfit">0 đ</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="fw-bold mb-0 text-success"><i class="bi bi-trophy me-2"></i> Top 5 Mặt Hàng Bán Chạy Nhất</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Hạng</th>
+                                        <th>Tên sản phẩm</th>
+                                        <th>Đơn giá</th>
+                                        <th>Đã bán</th>
+                                        <th>Tồn kho hiện tại</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topSellersTableBody">
+                                    <tr><td colspan="5" class="text-center py-3 text-muted">Đang tính toán...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Modal Thêm/Sửa Sản Phẩm -->
+    <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold" id="productModalTitle">Thêm Món Hàng Tạp Hóa Mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="productForm" onsubmit="saveProductAdmin(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="pId" value="0">
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+                            <input type="text" id="pName" class="form-control" required placeholder="Ví dụ: Nước ngọt Coca lon 320ml">
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Loại hàng</label>
+                                <select id="pCategoryId" class="form-select">
+                                    <option value="1">🍜 Mì gói & Thực phẩm khô</option>
+                                    <option value="2">🥤 Nước giải khát & Sữa</option>
+                                    <option value="3">🧂 Gia vị & Dầu ăn</option>
+                                    <option value="4">🍪 Bánh kẹo & Snack</option>
+                                    <option value="5">🧼 Hóa phẩm & Đồ gia dụng</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Đơn vị tính (ĐVT)</label>
+                                <input type="text" id="pUnit" class="form-control" required placeholder="Gói, Chai, Lon, Hộp, Túi, Kg...">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" id="pPrice" class="form-control" required min="500" step="500" placeholder="10000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Số lượng tồn kho</label>
+                                <input type="number" id="pStock" class="form-control" required min="0" value="100">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Hạn sử dụng (HSD)</label>
+                                <input type="text" id="pExpiry" class="form-control" placeholder="Ví dụ: 12/2027">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Icon minh họa</label>
+                                <input type="text" id="pImage" class="form-control" value="🛒" placeholder="Emoji: 🍜, 🥤, 🧂, 🍫, 🧼...">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Mô tả sản phẩm</label>
+                            <textarea id="pDesc" class="form-control" rows="2" placeholder="Chi tiết sản phẩm..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" id="pBtnSubmit" class="btn btn-success fw-bold">
+                            <i class="bi bi-check-circle me-1"></i> Lưu Sản Phẩm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tạo Voucher Mới -->
+    <div class="modal fade" id="addVoucherModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-ticket-perforated me-2"></i> Tạo Mã Giảm Giá Mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="voucherForm" onsubmit="saveVoucherAdmin(event)">
+                    <div class="modal-body">
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Mã Voucher (viết hoa không dấu)</label>
+                            <input type="text" id="vCode" class="form-control text-uppercase" required placeholder="VD: TAPHOA20">
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Giảm theo % (hoặc 0)</label>
+                                <input type="number" id="vPercent" class="form-control" min="0" max="100" value="10">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Giảm số tiền cố định (VNĐ)</label>
+                                <input type="number" id="vAmount" class="form-control" min="0" step="1000" value="0">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Đơn hàng tối thiểu (VNĐ)</label>
+                            <input type="number" id="vMinOrder" class="form-control" min="0" step="1000" value="50000">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Mô tả hiển thị</label>
+                            <input type="text" id="vDesc" class="form-control" required placeholder="VD: Giảm 10% cho đơn từ 50k">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-success fw-bold">Lưu Voucher</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal In Phiếu Giao Hàng & Hóa Đơn Bán Lẻ (Bill POS) -->
+    <div class="modal fade" id="printBillModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-printer me-2"></i> Phiếu Gửi Hàng / Hóa Đơn Bán Lẻ</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="printBillArea">
+                    <div class="text-center mb-3 pb-2 border-bottom">
+                        <h5 class="fw-bold mb-0 text-success">🏪 TIỆM TẠP HÓA XANH</h5>
+                        <small class="text-muted d-block">Bách Hóa Online - Giao Hàng Siêu Tốc</small>
+                        <small class="text-muted">Hotline: 0900.000.001 - Địa chỉ: Cửa hàng Tạp Hóa Xanh</small>
+                    </div>
+
+                    <div class="small mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Mã đơn hàng: <strong id="billOrderId">#1</strong></span>
+                            <span id="billOrderDate">2026-10-29</span>
+                        </div>
+                        <div>Khách hàng: <strong id="billCustName">Nguyễn Văn An</strong></div>
+                        <div>Số điện thoại: <strong id="billCustPhone">0912345678</strong></div>
+                        <div>Địa chỉ giao: <span id="billCustAddr">123 Nguyễn Huệ, Q1</span></div>
+                        <div>Thanh toán: <span class="badge bg-light text-dark border" id="billPayment">COD</span></div>
+                    </div>
+
+                    <table class="table table-sm small mb-3">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mặt hàng</th>
+                                <th class="text-center">SL</th>
+                                <th class="text-end">Đ.Giá</th>
+                                <th class="text-end">T.Tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billItemsBody">
+                            <!-- Items -->
+                        </tbody>
+                    </table>
+
+                    <div class="border-top pt-2 small">
+                        <div class="d-flex justify-content-between fw-bold fs-6">
+                            <span>TỔNG CỘNG:</span>
+                            <span class="text-danger" id="billTotalAmount">0 đ</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4 pt-2 border-top small text-muted">
+                        <em>Cảm ơn Quý khách đã mua sắm tại Tạp Hóa Xanh!</em><br>
+                        <em>Quý khách vui lòng kiểm tra hàng trước khi thanh toán.</em>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="window.print()">
+                        <i class="bi bi-printer-fill me-1"></i> In Ngay (Print)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Tự động load dữ liệu Admin khi vào trang admin.html
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAdminStats();
+            loadAdminOrders();
+            loadAdminProducts();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạp Hóa Xanh - Siêu Thị Bách Hóa Online Tiện Lợi</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Header Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm py-2">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <span class="fs-2 me-2">🏪</span>
+                <div>
+                    <div class="fw-bold text-success mb-0 lh-1">TẠP HÓA XANH</div>
+                    <small class="text-muted" style="font-size: 0.75rem;">Bách Hóa Online Giá Tốt</small>
+                </div>
+            </a>
+
+            <!-- Search Bar -->
+            <div class="d-flex flex-grow-1 mx-lg-4 my-2 my-lg-0 max-w-500">
+                <div class="input-group search-box">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm mì tôm, nước ngọt, dầu ăn, bánh kẹo...">
+                    <button class="btn btn-success" type="button" onclick="performSearch()">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Actions: User Auth, Cart & Admin Link -->
+            <div class="d-flex align-items-center gap-2">
+                <div id="userAuthContainer">
+                    <button class="btn btn-outline-success btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#authModal">
+                        <i class="bi bi-person-circle me-1"></i> Đăng Nhập / Đăng Ký
+                    </button>
+                </div>
+
+                <button class="btn btn-success rounded-pill px-3 position-relative" data-bs-toggle="modal" data-bs-target="#cartModal">
+                    <i class="bi bi-cart3 me-1"></i> Giỏ Hàng
+                    <span id="cartCountBadge" class="badge bg-danger cart-badge">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-4">
+
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="fw-bold mb-2">🎉 Mua Tạp Hóa Trực Tuyến - Giao Hàng Siêu Tốc</h2>
+                    <p class="mb-3 opacity-90">Đầy đủ các loại đồ uống, mì gói, gia vị, đồ gia dụng tươi mới mỗi ngày. Giá bình dân, bảo đảm chất lượng & hạn sử dụng rõ ràng!</p>
+                    <span class="badge bg-warning text-dark px-3 py-2 fs-6">🚚 Miễn phí giao hàng cho đơn từ 150.000đ</span>
+                </div>
+                <div class="col-md-4 text-center d-none d-md-block fs-1">
+                    🛒 🍜 🥤 🧂 🍫
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Pills Filter -->
+        <div class="mb-3">
+            <div class="d-flex align-items-center mb-2">
+                <h5 class="fw-bold mb-0 me-3"><i class="bi bi-grid-fill text-success me-1"></i> Danh Mục Hàng Tạp Hóa:</h5>
+            </div>
+            <div id="categoryContainer" class="d-flex flex-wrap">
+                <button class="category-btn active" onclick="filterByCategory(0, this)">✨ Tất Cả Mặt Hàng</button>
+                <!-- Categories loaded via JS -->
+            </div>
+        </div>
+
+        <!-- Filter & Sort Toolbar -->
+        <div class="bg-white p-3 rounded-3 shadow-sm mb-4 border d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="fw-bold small text-muted"><i class="bi bi-funnel me-1"></i> Bộ Lọc:</span>
+                <select id="priceFilter" class="form-select form-select-sm" style="width: 170px;" onchange="applyFilters()">
+                    <option value="">Tất cả mức giá</option>
+                    <option value="<20k">Dưới 20.000 đ</option>
+                    <option value="20k-50k">20.000 - 50.000 đ</option>
+                    <option value="50k-100k">50.000 - 100.000 đ</option>
+                    <option value=">100k">Trên 100.000 đ</option>
+                </select>
+
+                <select id="sortBy" class="form-select form-select-sm" style="width: 170px;" onchange="applyFilters()">
+                    <option value="">Sắp xếp mặc định</option>
+                    <option value="price_asc">Giá tăng dần</option>
+                    <option value="price_desc">Giá giảm dần</option>
+                </select>
+            </div>
+
+            <!-- Voucher Banner Ticker -->
+            <div class="small bg-warning-subtle text-dark px-3 py-1 rounded-pill border border-warning d-flex align-items-center">
+                <span class="badge bg-danger me-2">MÃ GIẢM GIÁ</span>
+                <span>Nhập <strong>TAPHOA10</strong> (-10%), <strong>FREESHIP</strong> (-15k), <strong>GIAM20K</strong> (-20k)</span>
+            </div>
+        </div>
+
+        <!-- Products List Section -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0" id="sectionTitle">Danh Sách Mặt Hàng</h5>
+            <small class="text-muted" id="productCountText">Đang tải mặt hàng...</small>
+        </div>
+
+        <div id="productList" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+            <!-- Products loaded via JS -->
+        </div>
+
+    </div>
+
+    <!-- Modal Giỏ Hàng & Thanh Toán -->
+    <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold" id="cartModalLabel">
+                        <i class="bi bi-cart-check me-2"></i> Giỏ Hàng Tạp Hóa Của Bạn
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="emptyCartView" class="text-center py-5 text-muted d-none">
+                        <i class="bi bi-cart-x fs-1"></i>
+                        <p class="mt-2 mb-3">Giỏ hàng của bạn đang trống!</p>
+                        <button class="btn btn-outline-success" data-bs-dismiss="modal">Mua sắm ngay</button>
+                    </div>
+
+                    <div id="cartContentView">
+                        <!-- Danh sách mặt hàng trong giỏ -->
+                        <div class="table-responsive mb-3">
+                            <table class="table align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mặt hàng</th>
+                                        <th>ĐVT</th>
+                                        <th>Đơn giá</th>
+                                        <th style="width: 130px;">Số lượng</th>
+                                        <th>Thành tiền</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cartTableBody">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Mã Giảm Giá & Phí Vận Chuyển -->
+                        <div class="card p-3 bg-light border-0 mb-3">
+                            <label class="form-label small fw-bold text-success"><i class="bi bi-ticket-perforated me-1"></i> Mã Giảm Giá / Voucher Tạp Hóa:</label>
+                            <div class="input-group input-group-sm mb-2">
+                                <input type="text" id="voucherCodeInput" class="form-control text-uppercase" placeholder="Nhập mã (TAPHOA10, FREESHIP, GIAM20K)">
+                                <button class="btn btn-success fw-bold px-3" type="button" onclick="applyVoucherCode()">Áp Dụng</button>
+                            </div>
+                            <div id="voucherMessage" class="small"></div>
+
+                            <hr class="my-2">
+
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Tiền hàng:</span>
+                                <span class="fw-bold" id="cartSubtotalDisplay">0 đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between small mb-1 text-success">
+                                <span>Giảm giá (Voucher):</span>
+                                <span class="fw-bold" id="cartDiscountDisplay">- 0 đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span>Phí vận chuyển:</span>
+                                <span class="fw-bold" id="cartShippingDisplay">15.000 đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                <span class="fs-6 fw-bold">Tổng thanh toán:</span>
+                                <span class="fs-4 fw-bold text-danger" id="cartTotalDisplay">0 đ</span>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">* Miễn phí giao hàng cho đơn từ 150.000 đ trở lên</small>
+                        </div>
+
+                        <!-- Thông tin đặt hàng -->
+                        <div class="border rounded-3 p-3">
+                            <h6 class="fw-bold text-success mb-3">
+                                <i class="bi bi-geo-alt-fill me-1"></i> Thông Tin Giao Hàng
+                            </h6>
+                            <form id="orderForm" onsubmit="submitOrder(event)">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Họ và tên người nhận <span class="text-danger">*</span></label>
+                                        <input type="text" id="custName" class="form-control form-control-sm" required placeholder="Ví dụ: Nguyễn Văn A">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Số điện thoại <span class="text-danger">*</span></label>
+                                        <input type="tel" id="custPhone" class="form-control form-control-sm" required placeholder="Ví dụ: 0912345678">
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small">Địa chỉ nhận hàng cụ thể <span class="text-danger">*</span></label>
+                                    <input type="text" id="custAddress" class="form-control form-control-sm" required placeholder="Số nhà, tên đường, phường/xã...">
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Phương thức thanh toán</label>
+                                        <select id="custPayment" class="form-select form-select-sm">
+                                            <option value="Tiền mặt khi nhận hàng (COD)">💵 Tiền mặt khi nhận hàng (COD)</option>
+                                            <option value="Chuyển khoản ngân hàng">🏦 Chuyển khoản ngân hàng / QR Pay</option>
+                                            <option value="Ví điện tử MoMo">📱 Ví điện tử MoMo</option>
+                                            <option value="Ví điện tử ZaloPay">💳 Ví điện tử ZaloPay</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Ghi chú cho tiệm tạp hóa</label>
+                                        <input type="text" id="custNote" class="form-control form-control-sm" placeholder="VD: Giao trước 12h trưa...">
+                                    </div>
+                                </div>
+                                            <option value="Tiền mặt khi nhận hàng (COD)">💵 Tiền mặt khi nhận hàng (COD)</option>
+                                            <option value="Chuyển khoản ngân hàng">🏦 Chuyển khoản ngân hàng / QR Pay</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Ghi chú cho tiệm tạp hóa</label>
+                                        <input type="text" id="custNote" class="form-control form-control-sm" placeholder="VD: Giao trước 12h trưa...">
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer px-0 pb-0 mt-3">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tiếp tục mua hàng</button>
+                                    <button type="submit" class="btn btn-danger px-4 fw-bold">
+                                        <i class="bi bi-bag-check-fill me-1"></i> Xác Nhận Đặt Hàng
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Đăng Nhập & Đăng Ký -->
+    <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold" id="authModalTitle">
+                        <i class="bi bi-person-lock me-2"></i> Tài Khoản Khách Hàng
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-pills nav-fill mb-3" id="authTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-bold" id="tab-login" data-bs-toggle="pill" data-bs-target="#loginPane">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Đăng Nhập
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" id="tab-register" data-bs-toggle="pill" data-bs-target="#registerPane">
+                                <i class="bi bi-person-plus me-1"></i> Tạo Tài Khoản Mới
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="authTabsContent">
+                        <!-- TAB ĐĂNG NHẬP -->
+                        <div class="tab-pane fade show active" id="loginPane">
+                            <form id="loginForm" onsubmit="handleLogin(event)">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Tên đăng nhập</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input type="text" id="loginUsername" class="form-control" required placeholder="Nhập tên đăng nhập...">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Mật khẩu</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                        <input type="password" id="loginPassword" class="form-control" required placeholder="Nhập mật khẩu...">
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-light border small text-muted mb-3 py-2">
+                                    <i class="bi bi-info-circle me-1 text-success"></i> <strong>Tài khoản có sẵn để thử:</strong><br>
+                                    • Admin: <code>admin</code> / pass: <code>admin123</code><br>
+                                    • Khách: <code>khachhang</code> / pass: <code>123456</code>
+                                </div>
+
+                                <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+                                    <i class="bi bi-check2-circle me-1"></i> Đăng Nhập Ngay
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- TAB ĐĂNG KÝ -->
+                        <div class="tab-pane fade" id="registerPane">
+                            <form id="registerForm" onsubmit="handleRegister(event)">
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Họ và tên của bạn <span class="text-danger">*</span></label>
+                                    <input type="text" id="regFullName" class="form-control" required placeholder="Ví dụ: Trần Văn Nam">
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">Tên đăng nhập <span class="text-danger">*</span></label>
+                                        <input type="text" id="regUsername" class="form-control" required placeholder="viết liền không dấu">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">Mật khẩu <span class="text-danger">*</span></label>
+                                        <input type="password" id="regPassword" class="form-control" required placeholder="Tối thiểu 4 ký tự">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-5">
+                                        <label class="form-label small fw-bold">Số điện thoại</label>
+                                        <input type="tel" id="regPhone" class="form-control" placeholder="0912...">
+                                    </div>
+                                    <div class="col-md-7">
+                                        <label class="form-label small fw-bold">Địa chỉ nhận hàng</label>
+                                        <input type="text" id="regAddress" class="form-control" placeholder="Số nhà, đường, phường...">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                                    <i class="bi bi-person-check me-1"></i> Đăng Ký Tài Khoản
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Lịch Sử Đơn Hàng Của Tôi -->
+    <div class="modal fade" id="myOrdersModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-clock-history me-2"></i> Lịch Sử Mua Hàng Của Tôi
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div id="myOrdersContent">
+                        <p class="text-center text-muted py-4">Đang tải danh sách đơn...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thông Tin Cá Nhân & Sổ Địa Chỉ -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-lines-fill me-2"></i> Hồ Sơ & Sổ Địa Chỉ Nhận Hàng</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="profileForm" onsubmit="saveUserProfile(event)">
+                    <div class="modal-body p-4">
+                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3 mb-3">
+                            <div>
+                                <small class="text-muted d-block">Hạng thành viên:</small>
+                                <span class="badge bg-warning text-dark fs-6" id="profRankBadge">Đồng</span>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">Điểm tích lũy:</small>
+                                <span class="fs-5 fw-bold text-success" id="profPointsDisplay">0 điểm</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Họ và tên</label>
+                            <input type="text" id="profFullName" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Số điện thoại liên lạc</label>
+                            <input type="tel" id="profPhone" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Sổ địa chỉ giao hàng mặc định</label>
+                            <textarea id="profAddress" class="form-control" rows="3" required placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-success fw-bold">Lưu Cập Nhật</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Đánh Giá & Phản Hồi Sản Phẩm -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-star-fill me-2"></i> Đánh Giá Chất Lượng Món Hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="reviewForm" onsubmit="submitReview(event)">
+                    <div class="modal-body p-4 text-center">
+                        <input type="hidden" id="revProductId" value="0">
+                        <input type="hidden" id="revOrderId" value="0">
+                        <h6 class="fw-bold mb-3" id="revProductName">Mì Hảo Hảo tôm chua cay 75g</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted d-block">Bạn cảm thấy sản phẩm này thế nào?</label>
+                            <div class="rating-stars fs-2" id="starContainer">
+                                <span class="star selected" onclick="setRating(1)">★</span>
+                                <span class="star selected" onclick="setRating(2)">★</span>
+                                <span class="star selected" onclick="setRating(3)">★</span>
+                                <span class="star selected" onclick="setRating(4)">★</span>
+                                <span class="star selected" onclick="setRating(5)">★</span>
+                            </div>
+                            <input type="hidden" id="revRating" value="5">
+                        </div>
+
+                        <div class="text-start mb-2">
+                            <label class="form-label small fw-bold">Bình luận & cảm nhận của bạn:</label>
+                            <textarea id="revComment" class="form-control" rows="3" required placeholder="Hàng tươi ngon, date xa, giao hàng nhanh..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-warning fw-bold px-4">Gửi Đánh Giá</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Hóa Đơn Bán Lẻ Trực Tiếp Cho Khách (Invoice / Bill) -->
+    <div class="modal fade" id="customerInvoiceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-success text-white py-2">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-receipt me-2"></i> Hóa Đơn Mua Hàng Điện Tử</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="customerInvoiceArea">
+                    <div class="text-center mb-3 pb-2 border-bottom">
+                        <div class="fs-2 mb-1">🏪</div>
+                        <h5 class="fw-bold mb-0 text-success">TIỆM TẠP HÓA XANH</h5>
+                        <small class="text-muted d-block">Bách Hóa Online - Giao Hàng Siêu Tốc</small>
+                        <small class="text-muted">Hotline: 0900.000.001 - Địa chỉ: Cửa hàng Tạp Hóa Xanh</small>
+                    </div>
+
+                    <div class="bg-light p-3 rounded-3 mb-3 small">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Mã hóa đơn:</span>
+                            <strong class="text-primary fs-6" id="invOrderId">#1</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Thời gian đặt:</span>
+                            <span id="invOrderDate">2026-10-29</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Khách hàng:</span>
+                            <strong id="invCustName">Nguyễn Văn An</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Số điện thoại:</span>
+                            <span id="invCustPhone">0912345678</span>
+                        </div>
+                        <div class="mb-1">
+                            <span>Địa chỉ giao:</span>
+                            <strong id="invCustAddress">123 Nguyễn Huệ, Q1</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Thanh toán:</span>
+                            <span class="badge bg-success-subtle text-success border border-success" id="invPaymentMethod">Tiền mặt (COD)</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm small mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mặt hàng</th>
+                                    <th class="text-center">ĐVT</th>
+                                    <th class="text-center">SL</th>
+                                    <th class="text-end">Đ.Giá</th>
+                                    <th class="text-end">T.Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invItemsBody">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="border-top pt-2 small mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Tiền hàng:</span>
+                            <span id="invSubtotal">0 đ</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 text-success">
+                            <span>Giảm giá (Voucher):</span>
+                            <span id="invDiscount">- 0 đ</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Phí giao hàng:</span>
+                            <span id="invShipping">15.000 đ</span>
+                        </div>
+                        <hr class="my-1">
+                        <div class="d-flex justify-content-between align-items-center fw-bold fs-5 text-danger pt-1">
+                            <span>TỔNG THANH TOÁN:</span>
+                            <span id="invTotal">0 đ</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center p-3 bg-light rounded-3 small">
+                        <div class="fw-bold text-success mb-1">🎉 ĐẶT HÀNG THÀNH CÔNG!</div>
+                        <p class="text-muted mb-0">Cửa hàng Tạp Hóa Xanh sẽ liên hệ và giao hàng cho bạn trong 30-45 phút.</p>
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left me-1"></i> Tiếp Tục Mua Sắm
+                    </button>
+                    <button type="button" class="btn btn-success fw-bold px-3" onclick="printCustomerInvoice()">
+                        <i class="bi bi-printer-fill me-1"></i> In Hóa Đơn / Lưu PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-top py-4 mt-5 text-center text-muted">
+        <div class="container">
+            <p class="mb-1 fw-bold text-success">🏪 Tiệm Tạp Hóa Xanh - Bách Hóa Tiện Lợi</p>
+            <small>Đồ án môn Nhập Môn Mạng / Lập Trình Web (Công nghệ: Java HTTP Server + SQL + HTML5/CSS3/JS)</small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 cho thông báo đẹp mắt -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Custom JS -->
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1198 @@
+// ==========================================
+// TẠP HÓA XANH - FRONTEND JAVASCRIPT
+// ==========================================
+
+let allProducts = [];
+let cart = JSON.parse(localStorage.getItem('taphoa_cart') || '[]');
+let currentCategoryId = 0;
+let currentUser = JSON.parse(localStorage.getItem('taphoa_user') || 'null');
+let appliedVoucher = null;
+let appliedDiscount = 0;
+
+// Format tiền tệ VNĐ
+function formatMoney(amount) {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+}
+
+// Khởi chạy khi tải trang
+document.addEventListener('DOMContentLoaded', () => {
+    renderUserNavbar();
+    if (document.getElementById('productList')) {
+        loadCategories();
+        loadProducts();
+        updateCartBadge();
+        renderCart();
+    }
+});
+
+// Render trạng thái đăng nhập trên Navbar
+function renderUserNavbar() {
+    const container = document.getElementById('userAuthContainer');
+    if (!container) return;
+
+    if (currentUser) {
+        const isAdmin = currentUser.role === 'ADMIN';
+        container.innerHTML = `
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-success rounded-pill px-3 dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-check-fill text-success me-1"></i> ${currentUser.fullName || currentUser.username}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <li><h6 class="dropdown-header">Tài khoản: ${currentUser.username} (${isAdmin ? 'Chủ tiệm' : 'Khách hàng'})</h6></li>
+                    ${isAdmin ? '<li><a class="dropdown-item text-danger fw-bold" href="/admin.html"><i class="bi bi-shield-lock me-2"></i>Trang Quản Trị</a></li>' : ''}
+                    <li><button class="dropdown-item" onclick="openProfileModal()"><i class="bi bi-person-lines-fill me-2"></i>Hồ sơ & Sổ địa chỉ</button></li>
+                    <li><button class="dropdown-item" onclick="openMyOrdersModal()"><i class="bi bi-bag-check me-2"></i>Đơn hàng của tôi</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item text-danger" onclick="handleLogout()"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button></li>
+                </ul>
+            </div>
+            ${isAdmin ? '<a href="/admin.html" class="btn btn-outline-danger btn-sm rounded-pill px-3 ms-1 fw-bold"><i class="bi bi-shield-lock me-1"></i>Admin</a>' : ''}
+        `;
+    } else {
+        container.innerHTML = `
+            <button class="btn btn-outline-success btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#authModal">
+                <i class="bi bi-person-circle me-1"></i> Đăng Nhập / Đăng Ký
+            </button>
+        `;
+    }
+}
+
+// Xử lý Đăng Nhập
+async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            currentUser = result.user;
+            localStorage.setItem('taphoa_user', JSON.stringify(currentUser));
+
+            const modalEl = document.getElementById('authModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            renderUserNavbar();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Đăng nhập thành công!',
+                text: `Chào mừng ${currentUser.fullName} đến với Tạp Hóa Xanh!`,
+                timer: 2000
+            });
+        } else {
+            Swal.fire('Lỗi đăng nhập', result.message || 'Sai thông tin đăng nhập!', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+    }
+}
+
+// Xử lý Đăng Ký
+async function handleRegister(e) {
+    e.preventDefault();
+    const fullName = document.getElementById('regFullName').value.trim();
+    const username = document.getElementById('regUsername').value.trim();
+    const password = document.getElementById('regPassword').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const address = document.getElementById('regAddress').value.trim();
+
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullName, username, password, phone, address })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            currentUser = result.user;
+            localStorage.setItem('taphoa_user', JSON.stringify(currentUser));
+
+            const modalEl = document.getElementById('authModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            renderUserNavbar();
+
+            Swal.fire({
+                icon: 'success',
+                title: '🎉 Đăng ký thành công!',
+                text: `Chào mừng ${currentUser.fullName} đã trở thành thành viên Tạp Hóa Xanh!`,
+                timer: 2000
+            });
+        } else {
+            Swal.fire('Lỗi đăng ký', result.message || 'Không thể tạo tài khoản!', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+    }
+}
+
+// Đăng Xuất
+function handleLogout() {
+    currentUser = null;
+    localStorage.removeItem('taphoa_user');
+    renderUserNavbar();
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: 'Đã đăng xuất',
+        showConfirmButton: false,
+        timer: 1500
+    });
+}
+
+// Quản lý Hồ sơ & Sổ địa chỉ
+function openProfileModal() {
+    if (!currentUser) return;
+    document.getElementById('profFullName').value = currentUser.fullName || '';
+    document.getElementById('profPhone').value = currentUser.phone || '';
+    document.getElementById('profAddress').value = currentUser.address || '';
+    document.getElementById('profRankBadge').innerText = currentUser.rank || 'Đồng';
+    document.getElementById('profPointsDisplay').innerText = (currentUser.points || 0) + ' điểm';
+
+    const modalEl = document.getElementById('profileModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+async function saveUserProfile(e) {
+    e.preventDefault();
+    if (!currentUser) return;
+    const fullName = document.getElementById('profFullName').value.trim();
+    const phone = document.getElementById('profPhone').value.trim();
+    const address = document.getElementById('profAddress').value.trim();
+
+    try {
+        const res = await fetch('/api/users', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentUser.id, fullName, phone, address })
+        });
+        const result = await res.json();
+        if (result.success) {
+            currentUser.fullName = fullName;
+            currentUser.phone = phone;
+            currentUser.address = address;
+            localStorage.setItem('taphoa_user', JSON.stringify(currentUser));
+            renderUserNavbar();
+
+            const modalEl = document.getElementById('profileModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            Swal.fire('Thành công', 'Đã cập nhật hồ sơ & sổ địa chỉ nhận hàng!', 'success');
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// Đánh giá sản phẩm
+function openReviewModal(productId, productName, orderId) {
+    document.getElementById('revProductId').value = productId;
+    document.getElementById('revProductName').innerText = productName;
+    document.getElementById('revOrderId').value = orderId;
+    document.getElementById('revComment').value = '';
+    setRating(5);
+
+    const modalEl = document.getElementById('reviewModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function setRating(rating) {
+    document.getElementById('revRating').value = rating;
+    const stars = document.querySelectorAll('#starContainer .star');
+    stars.forEach((s, idx) => {
+        if (idx < rating) {
+            s.classList.add('selected');
+        } else {
+            s.classList.remove('selected');
+        }
+    });
+}
+
+async function submitReview(e) {
+    e.preventDefault();
+    if (!currentUser) return;
+    const data = {
+        productId: document.getElementById('revProductId').value,
+        userId: currentUser.id,
+        userName: currentUser.fullName || currentUser.username,
+        orderId: document.getElementById('revOrderId').value,
+        rating: document.getElementById('revRating').value,
+        comment: document.getElementById('revComment').value.trim()
+    };
+
+    try {
+        const res = await fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+            const modalEl = document.getElementById('reviewModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            Swal.fire('Cảm ơn bạn!', 'Đánh giá chất lượng món hàng của bạn đã được ghi nhận.', 'success');
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// Xem Đơn Hàng Của Tôi & Theo dõi thời gian thực (Stepper)
+async function openMyOrdersModal() {
+    if (!currentUser) return;
+
+    const modalEl = document.getElementById('myOrdersModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    const container = document.getElementById('myOrdersContent');
+    container.innerHTML = '<p class="text-center text-muted py-4">Đang tải lịch sử mua hàng...</p>';
+
+    try {
+        const res = await fetch(`/api/user/orders?userId=${currentUser.id}`);
+        const orders = await res.json();
+        myOrdersCache = orders;
+
+        if (orders.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-bag-x fs-1"></i>
+                    <p class="mt-2">Bạn chưa có đơn đặt hàng nào!</p>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = orders.map(o => {
+            // Xác định bước tiến trình (Stepper 4 bước)
+            let step = 1;
+            if (o.status === 'Đang đóng gói') step = 2;
+            else if (o.status === 'Đang giao' || o.status === 'Đang giao hàng') step = 3;
+            else if (o.status === 'Hoàn thành' || o.status === 'Đã hoàn thành' || o.status === 'Đã xong') step = 4;
+            else if (o.status === 'Đã hủy') step = 0;
+
+            const isDone = step === 4;
+
+            const itemsHtml = o.items.map(it => `
+                <div class="d-flex justify-content-between align-items-center small py-1 border-bottom">
+                    <span>${it.productName} <strong>x${it.quantity} ${it.unit}</strong></span>
+                    <div>
+                        <span class="text-success fw-bold me-2">${formatMoney(it.totalPrice)}</span>
+                        ${isDone ? `<button class="btn btn-xs btn-outline-warning text-dark py-0 px-2" style="font-size: 0.75rem;" onclick="openReviewModal(${it.productId}, '${it.productName.replace(/'/g, "\\'")}', ${o.id})">⭐ Đánh giá</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            const statusBadge = isDone ? 'bg-success' : (step === 3 ? 'bg-primary' : (step === 2 ? 'bg-info text-dark' : (step === 0 ? 'bg-secondary' : 'bg-warning text-dark')));
+
+            return `
+                <div class="card mb-3 shadow-sm border rounded-3 bg-white">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="fw-bold text-primary fs-6">Đơn hàng #${o.id}</span>
+                                <small class="text-muted ms-2">${o.orderDate || ''}</small>
+                            </div>
+                            <span class="badge ${statusBadge} px-2 py-1">${o.status}</span>
+                        </div>
+
+                        <!-- Stepper tiến trình theo dõi thời gian thực -->
+                        ${step > 0 ? `
+                        <div class="stepper-wrapper mb-3">
+                            <div class="stepper-item ${step >= 1 ? (step === 1 ? 'active' : 'completed') : ''}">
+                                <div class="stepper-circle">1</div>
+                                <div class="stepper-title">Chờ xác nhận</div>
+                            </div>
+                            <div class="stepper-item ${step >= 2 ? (step === 2 ? 'active' : 'completed') : ''}">
+                                <div class="stepper-circle">2</div>
+                                <div class="stepper-title">Đang đóng gói</div>
+                            </div>
+                            <div class="stepper-item ${step >= 3 ? (step === 3 ? 'active' : 'completed') : ''}">
+                                <div class="stepper-circle">3</div>
+                                <div class="stepper-title">Đang giao hàng</div>
+                            </div>
+                            <div class="stepper-item ${step >= 4 ? 'completed' : ''}">
+                                <div class="stepper-circle">4</div>
+                                <div class="stepper-title">Hoàn thành</div>
+                            </div>
+                        </div>` : '<div class="alert alert-secondary py-1 text-center small mb-3">Đơn hàng này đã bị hủy.</div>'}
+
+                        <div class="mb-2 bg-light p-2 rounded">
+                            ${itemsHtml}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                            <div>
+                                <small class="text-muted d-block"><i class="bi bi-geo-alt"></i> ${o.address} (${o.paymentMethod})</small>
+                                <button class="btn btn-sm btn-outline-success py-0 px-2 mt-1" style="font-size: 0.75rem;" onclick="viewMyOrderInvoice(${o.id})">
+                                    <i class="bi bi-receipt me-1"></i> Xem Hóa Đơn
+                                </button>
+                            </div>
+                            <span class="fw-bold fs-6 text-danger">Tổng: ${formatMoney(o.totalAmount)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<p class="text-center text-danger py-4">Lỗi khi tải đơn hàng!</p>';
+    }
+}
+
+// 1. Tải danh mục
+async function loadCategories() {
+    try {
+        const res = await fetch('/api/categories');
+        const categories = await res.json();
+        const container = document.getElementById('categoryContainer');
+        if (!container) return;
+
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'category-btn';
+            btn.innerHTML = `${cat.icon} ${cat.name}`;
+            btn.onclick = () => filterByCategory(cat.id, btn);
+            container.appendChild(btn);
+        });
+    } catch (err) {
+        console.error("Lỗi tải danh mục:", err);
+    }
+}
+
+// 2. Tải sản phẩm
+async function loadProducts(keyword = '', categoryId = 0) {
+    try {
+        const price = document.getElementById('priceFilter') ? document.getElementById('priceFilter').value : '';
+        const sort = document.getElementById('sortBy') ? document.getElementById('sortBy').value : '';
+        const url = `/api/products?keyword=${encodeURIComponent(keyword)}&category=${categoryId}&price=${encodeURIComponent(price)}&sort=${encodeURIComponent(sort)}`;
+        const res = await fetch(url);
+        allProducts = await res.json();
+        renderProducts(allProducts);
+    } catch (err) {
+        console.error("Lỗi tải sản phẩm:", err);
+    }
+}
+
+function applyFilters() {
+    const kw = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
+    loadProducts(kw, currentCategoryId);
+}
+
+// 3. Hiển thị danh sách sản phẩm
+function renderProducts(products) {
+    const container = document.getElementById('productList');
+    const countText = document.getElementById('productCountText');
+    if (!container) return;
+
+    countText.innerText = `Tìm thấy ${products.length} mặt hàng`;
+
+    if (products.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <div class="fs-1 text-muted">🔍</div>
+                <h5 class="text-muted mt-2">Không tìm thấy món hàng nào phù hợp!</h5>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = products.map(p => `
+        <div class="col">
+            <div class="product-card">
+                <div class="product-image-container">
+                    ${p.image || '🛒'}
+                </div>
+                <div class="product-body">
+                    <span class="product-unit">${p.unit}</span>
+                    <h6 class="product-title" title="${p.name}">${p.name}</h6>
+                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                        <span class="product-price">${formatMoney(p.price)}</span>
+                        <small class="text-muted">Còn: ${p.stock}</small>
+                    </div>
+                    <div class="product-expiry">
+                        <i class="bi bi-calendar-check me-1"></i>HSD: ${p.expiryDate || 'Mới sản xuất'}
+                    </div>
+                    <button class="btn btn-add-cart" onclick="addToCart(${p.id})">
+                        <i class="bi bi-cart-plus me-1"></i> Chọn mua
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 4. Lọc & Tìm kiếm
+function filterByCategory(catId, btnElement) {
+    currentCategoryId = catId;
+    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+    if (btnElement) btnElement.classList.add('active');
+    const kw = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
+    loadProducts(kw, catId);
+}
+
+function performSearch() {
+    const kw = document.getElementById('searchInput').value;
+    loadProducts(kw, currentCategoryId);
+}
+
+if (document.getElementById('searchInput')) {
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') performSearch();
+    });
+}
+
+// 5. Quản lý Giỏ Hàng
+function saveCart() {
+    localStorage.setItem('taphoa_cart', JSON.stringify(cart));
+    updateCartBadge();
+    renderCart();
+}
+
+function updateCartBadge() {
+    const badge = document.getElementById('cartCountBadge');
+    if (!badge) return;
+    const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+    badge.innerText = totalQty;
+}
+
+function addToCart(productId) {
+    const product = allProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    const existing = cart.find(item => item.productId === productId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({
+            productId: product.id,
+            name: product.name,
+            unit: product.unit,
+            price: product.price,
+            quantity: 1
+        });
+    }
+
+    saveCart();
+
+    // Thông báo nhanh
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `Đã thêm "${product.name}" vào giỏ`,
+        showConfirmButton: false,
+        timer: 1500
+    });
+}
+
+function changeQty(productId, delta) {
+    const item = cart.find(i => i.productId === productId);
+    if (!item) return;
+
+    item.quantity += delta;
+    if (item.quantity <= 0) {
+        cart = cart.filter(i => i.productId !== productId);
+    }
+    saveCart();
+}
+
+function removeFromCart(productId) {
+    cart = cart.filter(i => i.productId !== productId);
+    saveCart();
+}
+
+async function applyVoucherCode() {
+    const input = document.getElementById('voucherCodeInput');
+    const msg = document.getElementById('voucherMessage');
+    if (!input || !msg) return;
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+        msg.innerHTML = '<span class="text-danger">Vui lòng nhập mã giảm giá!</span>';
+        return;
+    }
+
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    try {
+        const res = await fetch('/api/vouchers/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: code, subtotal: subtotal })
+        });
+        const result = await res.json();
+        if (result.valid) {
+            appliedVoucher = result.code;
+            appliedDiscount = result.discount;
+            msg.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>Áp dụng thành công mã <strong>${result.code}</strong> (${result.desc})</span>`;
+            renderCart();
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `Đã giảm ${formatMoney(appliedDiscount)}`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+        } else {
+            appliedVoucher = null;
+            appliedDiscount = 0;
+            msg.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${result.message}</span>`;
+            renderCart();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderCart() {
+    const tbody = document.getElementById('cartTableBody');
+    const emptyView = document.getElementById('emptyCartView');
+    const contentView = document.getElementById('cartContentView');
+    const totalDisplay = document.getElementById('cartTotalDisplay');
+
+    if (!tbody) return;
+
+    if (cart.length === 0) {
+        emptyView.classList.remove('d-none');
+        contentView.classList.add('d-none');
+        appliedVoucher = null;
+        appliedDiscount = 0;
+        return;
+    }
+
+    emptyView.classList.add('d-none');
+    contentView.classList.remove('d-none');
+
+    let subtotal = 0;
+    tbody.innerHTML = cart.map(item => {
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+        return `
+            <tr>
+                <td><strong>${item.name}</strong></td>
+                <td><span class="badge bg-light text-dark">${item.unit}</span></td>
+                <td>${formatMoney(item.price)}</td>
+                <td>
+                    <div class="input-group input-group-sm" style="width: 100px;">
+                        <button class="btn btn-outline-secondary qty-btn" type="button" onclick="changeQty(${item.productId}, -1)">-</button>
+                        <input type="text" class="form-control text-center p-0" value="${item.quantity}" readonly>
+                        <button class="btn btn-outline-secondary qty-btn" type="button" onclick="changeQty(${item.productId}, 1)">+</button>
+                    </div>
+                </td>
+                <td class="fw-bold text-success">${formatMoney(itemTotal)}</td>
+                <td>
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeFromCart(${item.productId})" title="Xóa">
+                        <i class="bi bi-trash3-fill"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    let shipping = subtotal >= 150000 || subtotal === 0 ? 0 : 15000;
+    let discount = appliedDiscount;
+    let total = Math.max(0, subtotal - discount + shipping);
+
+    const subDisplay = document.getElementById('cartSubtotalDisplay');
+    const discDisplay = document.getElementById('cartDiscountDisplay');
+    const shipDisplay = document.getElementById('cartShippingDisplay');
+    if (subDisplay) subDisplay.innerText = formatMoney(subtotal);
+    if (discDisplay) discDisplay.innerText = '- ' + formatMoney(discount);
+    if (shipDisplay) shipDisplay.innerText = shipping === 0 ? 'Miễn phí (0 đ)' : formatMoney(shipping);
+    totalDisplay.innerText = formatMoney(total);
+
+    // Tự động điền thông tin nếu khách đã đăng nhập
+    if (currentUser) {
+        const custNameEl = document.getElementById('custName');
+        const custPhoneEl = document.getElementById('custPhone');
+        const custAddrEl = document.getElementById('custAddress');
+        if (custNameEl && !custNameEl.value) custNameEl.value = currentUser.fullName || '';
+        if (custPhoneEl && !custPhoneEl.value) custPhoneEl.value = currentUser.phone || '';
+        if (custAddrEl && !custAddrEl.value) custAddrEl.value = currentUser.address || '';
+    }
+}
+
+// 6. Gửi Đơn Đặt Hàng & Xuất Hóa Đơn Trực Tiếp
+async function submitOrder(e) {
+    e.preventDefault();
+    if (cart.length === 0) {
+        Swal.fire('Lỗi', 'Giỏ hàng đang trống!', 'warning');
+        return;
+    }
+
+    let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let shipping = subtotal >= 150000 || subtotal === 0 ? 0 : 15000;
+    let discount = appliedDiscount;
+    let total = Math.max(0, subtotal - discount + shipping);
+
+    const orderData = {
+        userId: currentUser ? currentUser.id : 0,
+        customerName: document.getElementById('custName').value.trim(),
+        phone: document.getElementById('custPhone').value.trim(),
+        address: document.getElementById('custAddress').value.trim(),
+        note: document.getElementById('custNote').value.trim(),
+        paymentMethod: document.getElementById('custPayment').value,
+        items: cart
+    };
+
+    try {
+        const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            const invoiceData = {
+                orderId: result.orderId,
+                orderDate: new Date().toLocaleString('vi-VN'),
+                customerName: orderData.customerName,
+                phone: orderData.phone,
+                address: orderData.address,
+                paymentMethod: orderData.paymentMethod,
+                items: [...cart],
+                subtotal: subtotal,
+                discount: discount,
+                shipping: shipping,
+                total: total
+            };
+
+            cart = [];
+            appliedVoucher = null;
+            appliedDiscount = 0;
+            saveCart();
+
+            // Đóng modal giỏ hàng
+            const modalEl = document.getElementById('cartModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            // BUNG NGAY HÓA ĐƠN BÁN LẺ CHO KHÁCH
+            showCustomerInvoice(invoiceData);
+            loadProducts('', currentCategoryId);
+        } else {
+            Swal.fire('Lỗi', result.message || 'Không thể tạo đơn!', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ! Vui lòng kiểm tra máy chủ web đang chạy.', 'error');
+    }
+}
+
+// Hiển thị Hóa Đơn Điện Tử Bán Lẻ
+function showCustomerInvoice(data) {
+    document.getElementById('invOrderId').innerText = '#' + data.orderId;
+    document.getElementById('invOrderDate').innerText = data.orderDate;
+    document.getElementById('invCustName').innerText = data.customerName;
+    document.getElementById('invCustPhone').innerText = data.phone;
+    document.getElementById('invCustAddress').innerText = data.address;
+    document.getElementById('invPaymentMethod').innerText = data.paymentMethod;
+
+    const tbody = document.getElementById('invItemsBody');
+    tbody.innerHTML = data.items.map(it => `
+        <tr>
+            <td><strong>${it.name || it.productName}</strong></td>
+            <td class="text-center"><span class="badge bg-light text-dark border">${it.unit}</span></td>
+            <td class="text-center">${it.quantity}</td>
+            <td class="text-end">${formatMoney(it.price || it.unitPrice)}</td>
+            <td class="text-end fw-bold text-success">${formatMoney((it.price || it.unitPrice) * it.quantity)}</td>
+        </tr>
+    `).join('');
+
+    document.getElementById('invSubtotal').innerText = formatMoney(data.subtotal);
+    document.getElementById('invDiscount').innerText = '- ' + formatMoney(data.discount);
+    document.getElementById('invShipping').innerText = data.shipping === 0 ? 'Miễn phí (0 đ)' : formatMoney(data.shipping);
+    document.getElementById('invTotal').innerText = formatMoney(data.total);
+
+    const invModalEl = document.getElementById('customerInvoiceModal');
+    const invModal = new bootstrap.Modal(invModalEl);
+    invModal.show();
+}
+
+function printCustomerInvoice() {
+    window.print();
+}
+
+let myOrdersCache = [];
+
+function viewMyOrderInvoice(orderId) {
+    const o = myOrdersCache.find(x => x.id === orderId);
+    if (!o) return;
+    let sub = 0;
+    o.items.forEach(it => sub += it.totalPrice);
+    showCustomerInvoice({
+        orderId: o.id,
+        orderDate: o.orderDate || '',
+        customerName: o.customerName,
+        phone: o.phone,
+        address: o.address,
+        paymentMethod: o.paymentMethod,
+        items: o.items,
+        subtotal: sub,
+        discount: 0,
+        shipping: sub >= 150000 ? 0 : 15000,
+        total: o.totalAmount
+    });
+}
+
+// ==========================================
+// CÁC HÀM DÀNH CHO TRANG QUẢN TRỊ (ADMIN)
+// ==========================================
+
+async function loadAdminStats() {
+    try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('statProducts').innerText = data.totalProducts;
+        document.getElementById('statOrders').innerText = data.totalOrders;
+        document.getElementById('statPending').innerText = data.pendingOrders;
+        document.getElementById('statRevenue').innerText = formatMoney(data.totalRevenue);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+let adminProductsCache = [];
+
+let adminOrdersCache = [];
+
+async function loadAdminOrders() {
+    try {
+        const res = await fetch('/api/orders');
+        const orders = await res.json();
+        adminOrdersCache = orders;
+        const tbody = document.getElementById('ordersTableBody');
+        if (!tbody) return;
+
+        if (orders.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Chưa có đơn hàng nào</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = orders.map(o => {
+            const itemsHtml = o.items.map(it => `<div>• ${it.productName} (x${it.quantity} ${it.unit})</div>`).join('');
+            let statusBadge = 'bg-warning text-dark';
+            if (o.status === 'Đang đóng gói') statusBadge = 'bg-info text-dark';
+            else if (o.status === 'Đang giao hàng' || o.status === 'Đang giao') statusBadge = 'bg-primary';
+            else if (o.status === 'Hoàn thành' || o.status === 'Đã hoàn thành') statusBadge = 'bg-success';
+            else if (o.status === 'Đã hủy') statusBadge = 'bg-secondary';
+
+            return `
+                <tr>
+                    <td><strong class="text-primary">#${o.id}</strong><br><small class="text-muted">${o.orderDate || ''}</small></td>
+                    <td><strong>${o.customerName}</strong><br><small class="text-muted"><i class="bi bi-telephone"></i> ${o.phone}</small></td>
+                    <td><small>${o.address}</small>${o.note ? `<br><small class="text-danger">Ghi chú: ${o.note}</small>` : ''}</td>
+                    <td style="max-width: 250px; font-size: 0.85rem;">${itemsHtml}</td>
+                    <td><strong class="text-danger">${formatMoney(o.totalAmount)}</strong></td>
+                    <td><small class="badge bg-light text-dark border">${o.paymentMethod}</small></td>
+                    <td><span class="badge ${statusBadge}">${o.status}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-1 mb-1">
+                            <select class="form-select form-select-sm" style="width: 140px;" onchange="updateOrderStatus(${o.id}, this.value)">
+                                <option value="Chờ xác nhận" ${o.status === 'Chờ xác nhận' || o.status === 'Chờ xử lý' ? 'selected' : ''}>Chờ xác nhận</option>
+                                <option value="Đang đóng gói" ${o.status === 'Đang đóng gói' ? 'selected' : ''}>Đang đóng gói</option>
+                                <option value="Đang giao hàng" ${o.status === 'Đang giao hàng' || o.status === 'Đang giao' ? 'selected' : ''}>Đang giao hàng</option>
+                                <option value="Hoàn thành" ${o.status === 'Hoàn thành' || o.status === 'Đã hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
+                                <option value="Đã hủy" ${o.status === 'Đã hủy' ? 'selected' : ''}>Đã hủy đơn</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteOrder(${o.id})" title="Xóa đơn hàng">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                        <button class="btn btn-sm btn-outline-dark w-100 py-0" style="font-size: 0.75rem;" onclick="openPrintBillModal(${o.id})">
+                            <i class="bi bi-printer me-1"></i> In Phiếu Giao / Bill
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// In phiếu giao hàng & Hóa đơn bán lẻ (Bill POS)
+function openPrintBillModal(orderId) {
+    const o = adminOrdersCache.find(x => x.id === orderId);
+    if (!o) return;
+
+    document.getElementById('billOrderId').innerText = '#' + o.id;
+    document.getElementById('billOrderDate').innerText = o.orderDate || '';
+    document.getElementById('billCustName').innerText = o.customerName;
+    document.getElementById('billCustPhone').innerText = o.phone;
+    document.getElementById('billCustAddr').innerText = o.address;
+    document.getElementById('billPayment').innerText = o.paymentMethod;
+    document.getElementById('billTotalAmount').innerText = formatMoney(o.totalAmount);
+
+    const tbody = document.getElementById('billItemsBody');
+    tbody.innerHTML = o.items.map(it => `
+        <tr>
+            <td>${it.productName} (${it.unit})</td>
+            <td class="text-center">${it.quantity}</td>
+            <td class="text-end">${formatMoney(it.unitPrice)}</td>
+            <td class="text-end fw-bold">${formatMoney(it.totalPrice)}</td>
+        </tr>
+    `).join('');
+
+    const modalEl = document.getElementById('printBillModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+async function deleteOrder(orderId) {
+    const confirm = await Swal.fire({
+        title: `Xóa đơn hàng #${orderId}?`,
+        text: 'Hành động này không thể hoàn tác!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Đồng ý xóa',
+        cancelButtonText: 'Hủy'
+    });
+
+    if (confirm.isConfirmed) {
+        try {
+            await fetch(`/api/orders?id=${orderId}`, { method: 'DELETE' });
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `Đã xóa đơn hàng #${orderId}`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+            loadAdminOrders();
+            loadAdminStats();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+    try {
+        await fetch('/api/orders', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: orderId, status: newStatus })
+        });
+        loadAdminStats();
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `Đã đổi đơn #${orderId} sang "${newStatus}"`,
+            showConfirmButton: false,
+            timer: 1500
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function loadAdminProducts() {
+    try {
+        const res = await fetch('/api/products');
+        const products = await res.json();
+        adminProductsCache = products;
+        const tbody = document.getElementById('productsTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = products.map(p => {
+            const isLowStock = p.stock <= 20;
+            const stockBadge = isLowStock 
+                ? `<span class="badge bg-danger text-white"><i class="bi bi-exclamation-triangle-fill me-1"></i>TỒN THẤP (${p.stock})</span>` 
+                : `<span class="badge bg-success">${p.stock}</span>`;
+
+            return `
+                <tr class="${isLowStock ? 'table-warning' : ''}">
+                    <td><strong>#${p.id}</strong></td>
+                    <td class="fs-4">${p.image || '🛒'}</td>
+                    <td><strong>${p.name}</strong><br><small class="text-muted">${p.description || ''}</small></td>
+                    <td><span class="badge bg-info text-dark">${p.categoryName || 'Tạp hóa'}</span></td>
+                    <td><span class="badge bg-light text-dark border">${p.unit}</span></td>
+                    <td><strong class="text-danger">${formatMoney(p.price)}</strong></td>
+                    <td>${stockBadge}</td>
+                    <td><small class="badge bg-light text-muted border">${p.expiryDate || 'N/A'}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="openEditProductModal(${p.id})" title="Chỉnh sửa">
+                                <i class="bi bi-pencil-square me-1"></i>Sửa
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deleteProduct(${p.id})" title="Xóa">
+                                <i class="bi bi-trash me-1"></i>Xóa
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function openEditProductModal(id) {
+    const p = adminProductsCache.find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById('productModalTitle').innerText = `Chỉnh Sửa Mặt Hàng #${p.id}`;
+    document.getElementById('pBtnSubmit').innerHTML = '<i class="bi bi-check-circle me-1"></i> Cập Nhật Mặt Hàng';
+    document.getElementById('pId').value = p.id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pCategoryId').value = p.categoryId;
+    document.getElementById('pUnit').value = p.unit;
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pStock').value = p.stock;
+    document.getElementById('pExpiry').value = p.expiryDate || '';
+    document.getElementById('pImage').value = p.image || '🛒';
+    document.getElementById('pDesc').value = p.description || '';
+
+    const modalEl = document.getElementById('addProductModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function resetProductForm() {
+    document.getElementById('productModalTitle').innerText = 'Thêm Món Hàng Tạp Hóa Mới';
+    document.getElementById('pBtnSubmit').innerHTML = '<i class="bi bi-plus-circle me-1"></i> Lưu Mặt Hàng Mới';
+    document.getElementById('pId').value = '0';
+    document.getElementById('pName').value = '';
+    document.getElementById('pCategoryId').value = '1';
+    document.getElementById('pUnit').value = 'Gói';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pStock').value = '100';
+    document.getElementById('pExpiry').value = '12/2027';
+    document.getElementById('pImage').value = '🛒';
+    document.getElementById('pDesc').value = '';
+}
+
+async function saveProductAdmin(e) {
+    e.preventDefault();
+    const isEdit = document.getElementById('pId').value !== '0';
+    const data = {
+        id: document.getElementById('pId').value,
+        name: document.getElementById('pName').value.trim(),
+        categoryId: document.getElementById('pCategoryId').value,
+        unit: document.getElementById('pUnit').value.trim(),
+        price: document.getElementById('pPrice').value,
+        stock: document.getElementById('pStock').value,
+        expiryDate: document.getElementById('pExpiry').value.trim(),
+        image: document.getElementById('pImage').value.trim(),
+        description: document.getElementById('pDesc').value.trim()
+    };
+
+    try {
+        const res = await fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+            const modalEl = document.getElementById('addProductModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            Swal.fire({
+                icon: 'success',
+                title: isEdit ? 'Đã cập nhật sản phẩm!' : 'Đã thêm sản phẩm mới!',
+                text: `Mặt hàng "${data.name}" đã được lưu thành công vào kho.`,
+                timer: 2000
+            });
+            loadAdminProducts();
+            loadAdminStats();
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Lỗi', 'Không thể lưu sản phẩm!', 'error');
+    }
+}
+
+async function deleteProduct(id) {
+    const p = adminProductsCache.find(x => x.id === id);
+    const pName = p ? p.name : `#${id}`;
+
+    const confirm = await Swal.fire({
+        title: `Xóa "${pName}"?`,
+        text: 'Bạn có chắc chắn muốn xóa mặt hàng này khỏi kho tạp hóa?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Đồng ý xóa',
+        cancelButtonText: 'Hủy'
+    });
+
+    if (confirm.isConfirmed) {
+        try {
+            await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `Đã xóa mặt hàng "${pName}"`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+            loadAdminProducts();
+            loadAdminStats();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+}
+
+// --- QUẢN LÝ VOUCHERS (ADMIN) ---
+async function loadAdminVouchers() {
+    try {
+        const res = await fetch('/api/vouchers');
+        const vouchers = await res.json();
+        const tbody = document.getElementById('vouchersTableBody');
+        if (!tbody) return;
+
+        if (vouchers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Chưa có mã giảm giá nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = vouchers.map(v => `
+            <tr>
+                <td><strong class="text-success">${v.code}</strong></td>
+                <td><span class="badge bg-warning text-dark">${v.discountPercent > 0 ? v.discountPercent + '%' : formatMoney(v.discountAmount)}</span></td>
+                <td>${formatMoney(v.minOrder)}</td>
+                <td>${v.description}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteVoucherAdmin('${v.code}')">
+                        <i class="bi bi-trash"></i> Xóa
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function saveVoucherAdmin(e) {
+    e.preventDefault();
+    const data = {
+        code: document.getElementById('vCode').value.trim().toUpperCase(),
+        discountPercent: document.getElementById('vPercent').value,
+        discountAmount: document.getElementById('vAmount').value,
+        minOrder: document.getElementById('vMinOrder').value,
+        description: document.getElementById('vDesc').value.trim()
+    };
+
+    try {
+        const res = await fetch('/api/vouchers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+            const modalEl = document.getElementById('addVoucherModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            Swal.fire('Thành công', 'Đã lưu mã giảm giá mới!', 'success');
+            loadAdminVouchers();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function deleteVoucherAdmin(code) {
+    if (confirm(`Bạn có chắc muốn xóa mã giảm giá "${code}"?`)) {
+        try {
+            await fetch(`/api/vouchers?code=${code}`, { method: 'DELETE' });
+            Swal.fire('Đã xóa', 'Voucher đã được xóa', 'success');
+            loadAdminVouchers();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+}
+
+// --- QUẢN LÝ KHÁCH HÀNG & TÍCH ĐIỂM (ADMIN) ---
+async function loadAdminCustomers() {
+    try {
+        const res = await fetch('/api/users');
+        const users = await res.json();
+        const tbody = document.getElementById('customersTableBody');
+        if (!tbody) return;
+
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Chưa có khách hàng đăng ký</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = users.map(u => {
+            const rankBadge = u.rank === 'Vàng' ? 'bg-warning text-dark' : (u.rank === 'Bạc' ? 'bg-secondary text-white' : 'bg-light text-dark border');
+            return `
+                <tr>
+                    <td><strong>#${u.id}</strong></td>
+                    <td><strong>${u.fullName}</strong></td>
+                    <td><code>${u.username}</code></td>
+                    <td>${u.phone || 'N/A'}</td>
+                    <td><small>${u.address || 'N/A'}</small></td>
+                    <td class="text-center"><strong>${u.orderCount}</strong></td>
+                    <td class="text-danger fw-bold">${formatMoney(u.totalSpent)}</td>
+                    <td class="text-center"><strong class="text-success">${u.points}</strong> pts</td>
+                    <td><span class="badge ${rankBadge}">${u.rank}</span></td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// --- BÁO CÁO & THỐNG KÊ CHI TIẾT (ADMIN) ---
+async function loadAdminReports() {
+    try {
+        const res = await fetch('/api/stats/advanced');
+        const data = await res.json();
+
+        document.getElementById('repRevenue').innerText = formatMoney(data.totalRevenue);
+        document.getElementById('repCost').innerText = formatMoney(data.totalCost);
+        document.getElementById('repProfit').innerText = formatMoney(data.totalProfit);
+
+        const tbody = document.getElementById('topSellersTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = data.topSellers.map((item, index) => {
+            const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index + 1}`));
+            return `
+                <tr>
+                    <td class="fs-5">${medal}</td>
+                    <td><strong>${item.name}</strong></td>
+                    <td>${formatMoney(item.price)}</td>
+                    <td><span class="badge bg-danger fs-6">${item.sold}</span></td>
+                    <td><span class="badge bg-success">${item.stock}</span></td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error(err);
+    }
+}
