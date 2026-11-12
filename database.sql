@@ -90,7 +90,7 @@ GO
 
 -- Tài khoản mẫu (admin / khachhang)
 INSERT INTO TaiKhoan (TenDangNhap, MatKhau, HoTen, SoDienThoai, DiaChi, Quyen) VALUES
-('admin', 'admin123', N'Chủ Tiệm Tạp Hóa', '0900000001', N'Cửa hàng Tạp Hóa Xanh', 'ADMIN'),
+('admin', 'admin123', N'Chủ Tiệm Tạp Hóa', '0900000001', N'Cửa hàng Tạp Hóa', 'ADMIN'),
 ('khachhang', '123456', N'Nguyễn Văn An', '0912345678', N'123 Nguyễn Huệ, Quận 1, TP.HCM', 'CUSTOMER');
 GO
 

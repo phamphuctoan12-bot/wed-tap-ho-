@@ -5,6 +5,7 @@ import models.Product;
 import models.Order;
 import models.OrderItem;
 import models.User;
+import models.InventoryLog;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -26,12 +27,14 @@ public class DatabaseHelper {
     private final Map<String, Voucher> vouchers = new ConcurrentHashMap<>();
     private final List<Review> reviews = Collections.synchronizedList(new ArrayList<>());
     private final Map<Integer, Integer> userPoints = new ConcurrentHashMap<>();
+    private final List<InventoryLog> inventoryLogs = Collections.synchronizedList(new ArrayList<>());
 
     private final AtomicInteger productIdGen = new AtomicInteger(100);
     private final AtomicInteger orderIdGen = new AtomicInteger(10);
     private final AtomicInteger orderItemIdGen = new AtomicInteger(10);
     private final AtomicInteger userIdGen = new AtomicInteger(10);
     private final AtomicInteger reviewIdGen = new AtomicInteger(10);
+    private final AtomicInteger inventoryLogIdGen = new AtomicInteger(100);
 
     private DatabaseHelper() {
         initSampleData();
@@ -52,29 +55,78 @@ public class DatabaseHelper {
         addCategory(new Category(4, "Bánh kẹo & Snack", "🍪"));
         addCategory(new Category(5, "Hóa phẩm & Đồ gia dụng", "🧼"));
 
-        // 2. Khởi tạo sản phẩm hàng tạp hóa mẫu
-        addProductInternal(new Product(1, "Mì Hảo Hảo tôm chua cay 75g", 1, "Mì gói & Thực phẩm khô", "Gói", 4500, 250, "10/2027", "🍜", "Mì ăn liền quốc dân vị tôm chua cay đậm đà"));
-        addProductInternal(new Product(2, "Mì Omachi sườn hầm ngũ quả 80g", 1, "Mì gói & Thực phẩm khô", "Gói", 8500, 120, "11/2027", "🍜", "Sợi mì khoai tây dai ngon, nước sốt sườn hầm đậm vị"));
-        addProductInternal(new Product(3, "Phở bò Đệ Nhất gói 68g", 1, "Mì gói & Thực phẩm khô", "Gói", 9000, 80, "09/2027", "🍜", "Bánh phở dẻo mềm, nước cốt xương hầm thơm ngon"));
-        addProductInternal(new Product(4, "Gạo ST25 Ông Cua túi 5kg", 1, "Mì gói & Thực phẩm khô", "Túi", 185000, 45, "12/2027", "🍚", "Gạo ngon nhất thế giới, hạt thon dài, dẻo thơm"));
+        // 2. Khởi tạo sản phẩm hàng tạp hóa với ảnh chụp bao bì thực tế 100%
+        addProductInternal(new Product(1, "Mì Hảo Hảo tôm chua cay 75g", 1, "Mì gói & Thực phẩm khô", "Gói", 4500, 250, "10/2027", 
+            "/images/sp1_haohao.png", 
+            "Mì ăn liền quốc dân vị tôm chua cay đậm đà, sợi mì dai vàng óng ả."));
 
-        addProductInternal(new Product(5, "Nước ngọt Coca-Cola lon 320ml", 2, "Nước giải khát & Sữa", "Lon", 10000, 300, "06/2027", "🥤", "Nước giải khát có gas hương cola sảng khoái"));
-        addProductInternal(new Product(6, "Nước tăng lực Sting dâu tây đỏ 330ml", 2, "Nước giải khát & Sữa", "Chai", 11000, 180, "08/2027", "🥤", "Nước tăng lực vị dâu thơm ngon, giải nhiệt"));
-        addProductInternal(new Product(7, "Sữa tươi tiệt trùng Vinamilk 100% 1L", 2, "Nước giải khát & Sữa", "Hộp", 36000, 60, "05/2027", "🥛", "Sữa tươi nguyên chất có đường tiệt trùng bổ dưỡng"));
-        addProductInternal(new Product(8, "Nước khoáng thiên nhiên Lavie 500ml", 2, "Nước giải khát & Sữa", "Chai", 6000, 200, "12/2028", "💧", "Nước khoáng thiên nhiên tinh khiết mỗi ngày"));
+        addProductInternal(new Product(2, "Mì Omachi sườn hầm ngũ quả 80g", 1, "Mì gói & Thực phẩm khô", "Gói", 8500, 120, "11/2027", 
+            "/images/sp2_omachi.jpg", 
+            "Sợi mì khoai tây dai mướt kết hợp nước sốt sườn hầm ngũ quả đậm đà thơm nức."));
 
-        addProductInternal(new Product(9, "Dầu ăn đậu nành Simply chai 1L", 3, "Gia vị & Dầu ăn", "Chai", 58000, 50, "12/2027", "🛢️", "Dầu đậu nành nguyên chất 100%, tốt cho tim mạch"));
-        addProductInternal(new Product(10, "Nước mắm Nam Ngư Đệ Nhị chai 900ml", 3, "Gia vị & Dầu ăn", "Chai", 26000, 75, "01/2028", "🍶", "Nước mắm vị đậm đà, thơm ngon cho mọi bữa cơm"));
-        addProductInternal(new Product(11, "Hạt nêm Knorr thịt thăn xương ống 400g", 3, "Gia vị & Dầu ăn", "Gói", 34000, 90, "08/2027", "🍲", "Hạt nêm chiết xuất từ thịt thăn và xương hầm"));
-        addProductInternal(new Product(12, "Nước tương Tam Thái Tử Nhất Ca 500ml", 3, "Gia vị & Dầu ăn", "Chai", 16000, 110, "10/2027", "🥢", "Nước tương thanh ngọt dịu, chấm hay ướp đều ngon"));
+        addProductInternal(new Product(3, "Phở bò Đệ Nhất gói 68g", 1, "Mì gói & Thực phẩm khô", "Gói", 9000, 80, "09/2027", 
+            "/images/sp3_phodenhat.jpg", 
+            "Bánh phở dẻo mềm từ gạo sạch cùng gói nước cốt thịt bò hầm gia truyền."));
 
-        addProductInternal(new Product(13, "Bánh ChocoPie Orion hộp 12 cái 396g", 4, "Bánh kẹo & Snack", "Hộp", 55000, 40, "07/2027", "🍫", "Bánh xốp phủ sôcôla kẹp kem dẻo marshmallow"));
-        addProductInternal(new Product(14, "Bánh quy bơ Cosy Kinh Đô 288g", 4, "Bánh kẹo & Snack", "Hộp", 42000, 60, "09/2027", "🍪", "Bánh quy thơm ngậy hương bơ sữa giòn rụm"));
-        addProductInternal(new Product(15, "Snack khoai tây OStar vị tảo biển 90g", 4, "Bánh kẹo & Snack", "Gói", 22000, 85, "08/2027", "🥔", "Khoai tây tươi chiên giòn rụm rắc muối tảo biển"));
+        addProductInternal(new Product(4, "Gạo ST25 Ông Cua túi 5kg", 1, "Mì gói & Thực phẩm khô", "Túi", 185000, 45, "12/2027", 
+            "/images/sp4_gaost25.jpg", 
+            "Gạo đặc sản Sóc Trăng ngon nhất thế giới, hạt thon dài trắng tinh, dẻo thơm hương dứa."));
 
-        addProductInternal(new Product(16, "Nước giặt OMO Matic cửa trên túi 3.6kg", 5, "Hóa phẩm & Đồ gia dụng", "Túi", 175000, 30, "12/2028", "🧴", "Xoáy bay vết bẩn cứng đầu, thơm ngát hương hoa"));
-        addProductInternal(new Product(17, "Nước rửa chén Sunlight Chanh chai 750g", 5, "Hóa phẩm & Đồ gia dụng", "Chai", 28000, 65, "12/2028", "🍋", "Đánh bay dầu mỡ với chiết xuất chanh tươi thiên nhiên"));
-        addProductInternal(new Product(18, "Nước lau sàn Sunlight hương hoa hạ 1kg", 5, "Hóa phẩm & Đồ gia dụng", "Chai", 32000, 45, "10/2028", "✨", "Sàn nhà sạch bóng kin kít, thơm ngát bền lâu"));
+        addProductInternal(new Product(5, "Nước ngọt Coca-Cola lon 320ml", 2, "Nước giải khát & Sữa", "Lon", 10000, 300, "06/2027", 
+            "/images/sp5_cocacola.jpg", 
+            "Nước giải khát có gas hương cola sảng khoái, đã khát tức thì cho mọi cuộc vui."));
+
+        addProductInternal(new Product(6, "Nước tăng lực Sting dâu tây đỏ 330ml", 2, "Nước giải khát & Sữa", "Chai", 11000, 180, "08/2027", 
+            "/images/sp6_sting.png", 
+            "Nước tăng lực có gas vị dâu tây thơm ngon, giải nhiệt và bùng nổ năng lượng ngày dài."));
+
+        addProductInternal(new Product(7, "Sữa tươi tiệt trùng Vinamilk 100% 1L", 2, "Nước giải khát & Sữa", "Hộp", 36000, 60, "05/2027", 
+            "/images/sp7_vinamilk.png", 
+            "Sữa tươi nguyên chất tiệt trùng giàu canxi, vitamin D3 và khoáng chất dinh dưỡng."));
+
+        addProductInternal(new Product(8, "Nước khoáng thiên nhiên Lavie 500ml", 2, "Nước giải khát & Sữa", "Chai", 6000, 200, "12/2028", 
+            "/images/sp8_lavie.png", 
+            "Nước khoáng đóng chai nguồn tự nhiên tinh khiết, thanh mát mỗi ngày."));
+
+        addProductInternal(new Product(9, "Dầu ăn đậu nành Simply chai 1L", 3, "Gia vị & Dầu ăn", "Chai", 58000, 50, "12/2027", 
+            "/images/sp9_simply.jpg", 
+            "Dầu đậu nành nguyên chất 100% giàu Omega 3, 6, 9 rất tốt cho tim mạch người dùng."));
+
+        addProductInternal(new Product(10, "Nước mắm Nam Ngư Đệ Nhị chai 900ml", 3, "Gia vị & Dầu ăn", "Chai", 26000, 75, "01/2028", 
+            "/images/sp10_namngu.jpg", 
+            "Nước mắm cá cơm vị đậm đà vừa miệng, dậy mùi thơm cho món kho và nước chấm."));
+
+        addProductInternal(new Product(11, "Hạt nêm Knorr thịt thăn xương ống 400g", 3, "Gia vị & Dầu ăn", "Gói", 34000, 90, "08/2027", 
+            "/images/sp11_knorr.jpg", 
+            "Hạt nêm chiết xuất từ thịt thăn và xương hầm nhiều giờ, ngọt thanh tự nhiên cho món canh."));
+
+        addProductInternal(new Product(12, "Nước tương Tam Thái Tử Nhất Ca 500ml", 3, "Gia vị & Dầu ăn", "Chai", 16000, 110, "10/2027", 
+            "/images/sp12_tamthaitu.jpg", 
+            "Nước tương sánh đậm, thơm đậu nành, chấm món chiên xào hay ướp thịt đều ngon tròn vị."));
+
+        addProductInternal(new Product(13, "Bánh ChocoPie Orion hộp 12 cái 396g", 4, "Bánh kẹo & Snack", "Hộp", 55000, 40, "07/2027", 
+            "/images/sp13_chocopie.jpg", 
+            "Bánh xốp phủ socola ngọt ngào kẹp lớp kem dẻo marshmallow dẻo dai khó cưỡng."));
+
+        addProductInternal(new Product(14, "Bánh quy bơ Cosy Kinh Đô 288g", 4, "Bánh kẹo & Snack", "Hộp", 42000, 60, "09/2027", 
+            "/images/sp14_cosy.jpg", 
+            "Bánh quy thơm ngậy hương bơ sữa hảo hạng, giòn rụm tan ngay trong miệng."));
+
+        addProductInternal(new Product(15, "Snack khoai tây OStar vị tảo biển 90g", 4, "Bánh kẹo & Snack", "Gói", 22000, 85, "08/2027", 
+            "/images/sp15_ostar.jpg", 
+            "Khoai tây tự nhiên cắt lát mỏng giòn rụm kết hợp rong biển thơm lừng hấp dẫn."));
+
+        addProductInternal(new Product(16, "Nước giặt OMO Matic cửa trên túi 3.6kg", 5, "Hóa phẩm & Đồ gia dụng", "Túi", 175000, 30, "12/2028", 
+            "/images/sp16_omo.jpg", 
+            "Công nghệ xoáy bay vết bẩn cứng đầu trong 1 lần giặt, hương hoa tươi mát thơm lâu."));
+
+        addProductInternal(new Product(17, "Nước rửa chén Sunlight Chanh chai 750g", 5, "Hóa phẩm & Đồ gia dụng", "Chai", 28000, 65, "12/2028", 
+            "/images/sp17_sunlight_chanh.jpg", 
+            "Đánh bay dầu mỡ nhanh chóng với chiết xuất chanh tươi thiên nhiên, khử sạch mùi tanh."));
+
+        addProductInternal(new Product(18, "Nước lau sàn Sunlight hương hoa hạ 1kg", 5, "Hóa phẩm & Đồ gia dụng", "Chai", 32000, 45, "10/2028", 
+            "/images/sp18_sunlight_lau_san.jpg", 
+            "Sàn nhà sạch bóng kin kít, bảo vệ sàn và ngát hương hoa thơm mát cả ngày."));
 
         // 3. Khởi tạo đơn hàng mẫu
         Order order1 = new Order();
@@ -110,7 +162,7 @@ public class DatabaseHelper {
         orders.put(2, order2);
 
         // 4. Khởi tạo tài khoản mẫu
-        users.put("admin", new User(1, "admin", "admin123", "Chủ Tiệm Tạp Hóa", "0900000001", "Cửa hàng Tạp Hóa Xanh", "ADMIN"));
+        users.put("admin", new User(1, "admin", "admin123", "Chủ Tiệm Tạp Hóa", "0900000001", "Cửa hàng Tạp Hóa", "ADMIN"));
         users.put("khachhang", new User(2, "khachhang", "123456", "Nguyễn Văn An", "0912345678", "123 Nguyễn Huệ, Quận 1, TP.HCM", "CUSTOMER"));
         userPoints.put(2, 45); // Khách có 45 điểm
 
@@ -124,6 +176,15 @@ public class DatabaseHelper {
         reviews.add(new Review(1, 1, 2, "Nguyễn Văn An", 1, 5, "Mì Hảo Hảo date mới tinh, giòn ngon, shop đóng gói cẩn thận!", "2026-10-28 14:20"));
         reviews.add(new Review(2, 5, 2, "Nguyễn Văn An", 1, 5, "Nước ngọt Coca ướp lạnh uống cực đã, giao hàng nhanh 30 phút.", "2026-10-28 14:22"));
         reviews.add(new Review(3, 4, 2, "Trần Thị Mai", 2, 5, "Gạo ST25 chuẩn Ông Cua thơm dẻo, cả nhà mình rất thích.", "2026-10-29 09:10"));
+
+        // 7. Khởi tạo nhật ký kho hàng mẫu
+        inventoryLogs.add(new InventoryLog(1, 1, "Mì Hảo Hảo tôm chua cay 75g", "NHAP_KHO", 300, 300, 3500, "Công ty Acecook Việt Nam", "Nhập lô hàng chính hãng date 2027", "2026-10-25 08:30:00"));
+        inventoryLogs.add(new InventoryLog(2, 5, "Nước ngọt Coca-Cola lon 320ml", "NHAP_KHO", 350, 350, 7800, "Coca-Cola Beverages VN", "Nhập thùng hàng phục vụ ngày lễ", "2026-10-25 09:15:00"));
+        inventoryLogs.add(new InventoryLog(3, 4, "Gạo ST25 Ông Cua túi 5kg", "NHAP_KHO", 50, 50, 155000, "DNTN Hồ Quang Trí (Sóc Trăng)", "Nhập gạo ST25 lúa tôm đặc sản", "2026-10-26 10:00:00"));
+        inventoryLogs.add(new InventoryLog(4, 7, "Sữa tươi tiệt trùng Vinamilk 100% 1L", "NHAP_KHO", 80, 80, 28000, "Công ty CP Sữa Vinamilk", "Nhập sữa tươi tiệt trùng 1L có đường", "2026-10-27 11:20:00"));
+        inventoryLogs.add(new InventoryLog(5, 1, "Mì Hảo Hảo tôm chua cay 75g", "XUAT_BAN", -6, 294, 0, "Khách mua hàng", "Xuất bán đơn hàng #1", "2026-10-28 09:15:00"));
+        inventoryLogs.add(new InventoryLog(6, 5, "Nước ngọt Coca-Cola lon 320ml", "XUAT_BAN", -5, 345, 0, "Khách mua hàng", "Xuất bán đơn hàng #1", "2026-10-28 09:15:00"));
+        inventoryLogs.add(new InventoryLog(7, 16, "Nước giặt OMO Matic cửa trên túi 3.6kg", "DIEU_CHINH", -2, 30, 0, "Kiểm kê kho", "Hao hụt rách vỏ khi bốc dỡ", "2026-10-28 16:45:00"));
     }
 
     private void addCategory(Category c) {
@@ -223,6 +284,7 @@ public class DatabaseHelper {
             Product p = products.get(item.getProductId());
             if (p != null) {
                 p.setStock(Math.max(0, p.getStock() - item.getQuantity()));
+                logStockMovement(p.getId(), p.getName(), "XUAT_BAN", -item.getQuantity(), p.getStock(), 0, "Khách mua hàng", "Xuất bán theo đơn hàng #" + orderId);
             }
         }
         order.setTotalAmount(total);
@@ -232,6 +294,34 @@ public class DatabaseHelper {
 
     public boolean deleteOrder(int orderId) {
         return orders.remove(orderId) != null;
+    }
+
+    public Order getOrderById(int orderId) {
+        return orders.get(orderId);
+    }
+
+    public Order findOrderByBarcodeOrQuery(String query) {
+        if (query == null || query.trim().isEmpty()) return null;
+        String q = query.trim();
+
+        // 1. Thử tìm theo ID số (ví dụ: "1", "ORD-00001", "DH0001", "#1")
+        String digits = q.replaceAll("[^0-9]", "");
+        if (!digits.isEmpty()) {
+            try {
+                int id = Integer.parseInt(digits);
+                Order o = orders.get(id);
+                if (o != null) return o;
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // 2. Thử tìm theo số điện thoại khách hàng
+        for (Order o : orders.values()) {
+            if (o.getPhone() != null && o.getPhone().equals(q)) {
+                return o;
+            }
+        }
+
+        return null;
     }
 
     public List<Order> getAllOrders() {
@@ -513,5 +603,75 @@ public class DatabaseHelper {
         map.put("topSellers", topSellers);
 
         return map;
+    }
+
+    // ==============================================================
+    // QUẢN LÝ KHO HÀNG (INVENTORY MANAGEMENT)
+    // ==============================================================
+
+    public synchronized InventoryLog logStockMovement(int productId, String productName, String type, 
+                                                     int changeQty, int stockAfter, double importPrice, 
+                                                     String supplier, String note) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        InventoryLog log = new InventoryLog(
+            inventoryLogIdGen.incrementAndGet(),
+            productId,
+            productName,
+            type,
+            changeQty,
+            stockAfter,
+            importPrice,
+            supplier == null || supplier.isEmpty() ? "Hệ thống" : supplier,
+            note == null || note.isEmpty() ? "Biến động kho" : note,
+            LocalDateTime.now().format(dtf)
+        );
+        inventoryLogs.add(0, log);
+        return log;
+    }
+
+    public synchronized boolean importStock(int productId, int quantity, double importPrice, String supplier, String note) {
+        Product p = products.get(productId);
+        if (p == null || quantity <= 0) return false;
+        p.setStock(p.getStock() + quantity);
+        logStockMovement(p.getId(), p.getName(), "NHAP_KHO", quantity, p.getStock(), importPrice, supplier, note);
+        return true;
+    }
+
+    public synchronized boolean adjustStock(int productId, int newStock, String reason) {
+        Product p = products.get(productId);
+        if (p == null || newStock < 0) return false;
+        int diff = newStock - p.getStock();
+        p.setStock(newStock);
+        logStockMovement(p.getId(), p.getName(), "DIEU_CHINH", diff, newStock, 0, "Kiểm kê kho", reason);
+        return true;
+    }
+
+    public List<InventoryLog> getAllInventoryLogs() {
+        return new ArrayList<>(inventoryLogs);
+    }
+
+    public Map<String, Object> getInventorySummary() {
+        Map<String, Object> res = new HashMap<>();
+        int totalStockUnits = 0;
+        double totalStockValue = 0;
+        int lowStockCount = 0;
+        int outOfStockCount = 0;
+
+        for (Product p : products.values()) {
+            totalStockUnits += p.getStock();
+            totalStockValue += p.getStock() * p.getPrice() * 0.75; // Giá vốn ước tính 75% giá bán
+            if (p.getStock() <= 0) {
+                outOfStockCount++;
+            } else if (p.getStock() <= 20) {
+                lowStockCount++;
+            }
+        }
+
+        res.put("totalProducts", products.size());
+        res.put("totalStockUnits", totalStockUnits);
+        res.put("totalStockValue", totalStockValue);
+        res.put("lowStockCount", lowStockCount);
+        res.put("outOfStockCount", outOfStockCount);
+        return res;
     }
 }

@@ -7,6 +7,7 @@ import models.Order;
 import models.OrderItem;
 import models.Product;
 import models.User;
+import models.InventoryLog;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -22,6 +23,10 @@ import java.util.*;
 public class WebServer {
     private static final int PORT = 8080;
     private static final String PUBLIC_DIR = "public";
+
+    private static final long SERVER_START_TIME = System.currentTimeMillis();
+    private static final java.util.concurrent.atomic.AtomicLong totalRequests = new java.util.concurrent.atomic.AtomicLong(0);
+    private static final java.util.concurrent.atomic.AtomicLong totalBytesSent = new java.util.concurrent.atomic.AtomicLong(0);
 
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
@@ -91,6 +96,18 @@ public class WebServer {
         server.createContext("/api/orders", exchange -> {
             String method = exchange.getRequestMethod().toUpperCase();
             if ("GET".equals(method)) {
+                Map<String, String> query = parseQuery(exchange.getRequestURI().getQuery());
+                if (query.containsKey("barcode") || query.containsKey("code") || query.containsKey("id") || query.containsKey("query")) {
+                    String q = query.getOrDefault("barcode", query.getOrDefault("code", query.getOrDefault("id", query.get("query"))));
+                    Order o = db.findOrderByBarcodeOrQuery(q);
+                    if (o != null) {
+                        sendJsonResponse(exchange, 200, "{\"success\":true,\"order\":" + orderToJson(o) + "}");
+                    } else {
+                        sendJsonResponse(exchange, 404, "{\"success\":false,\"message\":\"Không tìm thấy đơn hàng theo mã vạch: " + escapeJson(q) + "\"}");
+                    }
+                    return;
+                }
+
                 List<Order> list = db.getAllOrders();
                 StringBuilder json = new StringBuilder("[");
                 for (int i = 0; i < list.size(); i++) {
@@ -347,16 +364,134 @@ public class WebServer {
             }
         });
 
+        // 8. API Quản Lý Kho Hàng (Inventory Management)
+        server.createContext("/api/inventory/summary", exchange -> {
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                Map<String, Object> sum = db.getInventorySummary();
+                String json = String.format(Locale.US,
+                    "{\"totalProducts\":%s,\"totalStockUnits\":%s,\"totalStockValue\":%.0f,\"lowStockCount\":%s,\"outOfStockCount\":%s}",
+                    sum.get("totalProducts"), sum.get("totalStockUnits"), (Double)sum.get("totalStockValue"),
+                    sum.get("lowStockCount"), sum.get("outOfStockCount")
+                );
+                sendJsonResponse(exchange, 200, json);
+            } else {
+                sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            }
+        });
+
+        server.createContext("/api/inventory/logs", exchange -> {
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                List<InventoryLog> logs = db.getAllInventoryLogs();
+                StringBuilder json = new StringBuilder("[");
+                for (int i = 0; i < logs.size(); i++) {
+                    InventoryLog log = logs.get(i);
+                    json.append(String.format(Locale.US,
+                        "{\"id\":%d,\"productId\":%d,\"productName\":\"%s\",\"type\":\"%s\",\"changeQuantity\":%d,\"stockAfter\":%d,\"importPrice\":%.0f,\"supplier\":\"%s\",\"note\":\"%s\",\"createdAt\":\"%s\"}",
+                        log.getId(), log.getProductId(), escapeJson(log.getProductName()), log.getType(),
+                        log.getChangeQuantity(), log.getStockAfter(), log.getImportPrice(),
+                        escapeJson(log.getSupplier()), escapeJson(log.getNote()), log.getCreatedAt()
+                    ));
+                    if (i < logs.size() - 1) json.append(",");
+                }
+                json.append("]");
+                sendJsonResponse(exchange, 200, json.toString());
+            } else {
+                sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            }
+        });
+
+        server.createContext("/api/inventory/import", exchange -> {
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readBody(exchange);
+                Map<String, String> data = parseSimpleJson(body);
+                int productId = Integer.parseInt(data.getOrDefault("productId", "0"));
+                int quantity = Integer.parseInt(data.getOrDefault("quantity", "0"));
+                double importPrice = Double.parseDouble(data.getOrDefault("importPrice", "0"));
+                String supplier = data.getOrDefault("supplier", "");
+                String note = data.getOrDefault("note", "");
+
+                boolean ok = db.importStock(productId, quantity, importPrice, supplier, note);
+                if (ok) {
+                    Product p = db.getProductById(productId);
+                    sendJsonResponse(exchange, 200, String.format("{\"success\":true,\"message\":\"Nhập kho thành công!\",\"newStock\":%d}", p != null ? p.getStock() : 0));
+                } else {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Không tìm thấy sản phẩm hoặc số lượng nhập không hợp lệ!\"}");
+                }
+            } else {
+                sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            }
+        });
+
+        server.createContext("/api/inventory/adjust", exchange -> {
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readBody(exchange);
+                Map<String, String> data = parseSimpleJson(body);
+                int productId = Integer.parseInt(data.getOrDefault("productId", "0"));
+                int newStock = Integer.parseInt(data.getOrDefault("newStock", "0"));
+                String reason = data.getOrDefault("reason", "Kiểm kê điều chỉnh kho");
+
+                boolean ok = db.adjustStock(productId, newStock, reason);
+                if (ok) {
+                    sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Điều chỉnh tồn kho thành công!\"}");
+                } else {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Không tìm thấy sản phẩm hoặc số lượng tồn không hợp lệ!\"}");
+                }
+            } else {
+                sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            }
+        });
+
+        // 9. API Giám sát Server & Mạng (Server Health & Network Metrics)
+        server.createContext("/api/server/status", exchange -> {
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                long uptimeSec = (System.currentTimeMillis() - SERVER_START_TIME) / 1000;
+                long hours = uptimeSec / 3600;
+                long mins = (uptimeSec % 3600) / 60;
+                long secs = uptimeSec % 60;
+                String uptimeStr = String.format("%d giờ %d phút %d giây", hours, mins, secs);
+
+                Runtime rt = Runtime.getRuntime();
+                long totalMem = rt.totalMemory() / (1024 * 1024);
+                long freeMem = rt.freeMemory() / (1024 * 1024);
+                long usedMem = totalMem - freeMem;
+
+                List<String> ips = new ArrayList<>();
+                try {
+                    Enumeration<java.net.NetworkInterface> ifaces = java.net.NetworkInterface.getNetworkInterfaces();
+                    while (ifaces.hasMoreElements()) {
+                        java.net.NetworkInterface iface = ifaces.nextElement();
+                        if (iface.isLoopback() || !iface.isUp()) continue;
+                        Enumeration<java.net.InetAddress> addrs = iface.getInetAddresses();
+                        while (addrs.hasMoreElements()) {
+                            java.net.InetAddress addr = addrs.nextElement();
+                            if (addr instanceof java.net.Inet4Address && !addr.isLoopbackAddress()) {
+                                ips.add("\"" + addr.getHostAddress() + " (" + iface.getName() + ")\"");
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                String json = String.format(Locale.US,
+                    "{\"status\":\"ONLINE\",\"tcpPort\":%d,\"uptimeSeconds\":%d,\"uptime\":\"%s\"," +
+                    "\"totalRequests\":%d,\"totalBytesSent\":%d,\"memoryUsedMb\":%d,\"memoryTotalMb\":%d," +
+                    "\"javaVersion\":\"%s\",\"os\":\"%s\",\"ipAddresses\":[%s]}",
+                    PORT, uptimeSec, uptimeStr, totalRequests.get(), totalBytesSent.get(),
+                    usedMem, totalMem, System.getProperty("java.version"),
+                    escapeJson(System.getProperty("os.name") + " " + System.getProperty("os.arch")),
+                    String.join(",", ips)
+                );
+                sendJsonResponse(exchange, 200, json);
+            } else {
+                sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            }
+        });
+
         server.setExecutor(null);
         server.start();
         System.out.println("=================================================================");
         System.out.println("       WEBSITE BÁN HÀNG TẠP HÓA ĐANG HOẠT ĐỘNG!                  ");
         System.out.println("=================================================================");
-        System.out.println("  [1] Truy cập từ máy tính này:");
-        System.out.println("      * Khách mua hàng: http://localhost:" + PORT + "/");
-        System.out.println("      * Chủ tiệm Admin: http://localhost:" + PORT + "/admin.html");
-        System.out.println();
-        System.out.println("  [2] Cho người khác truy cập (Cùng mạng Wi-Fi hoặc Dây mạng LAN):");
+        System.out.println("  [1] Địa chỉ IP mạng LAN thực tế (Thầy giáo chấm điểm & máy khác):");
         try {
             Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface.getNetworkInterfaces();
             while (interfaces.hasMoreElements()) {
@@ -368,10 +503,15 @@ public class WebServer {
                     if (addr instanceof java.net.Inet4Address && !addr.isLoopbackAddress()) {
                         System.out.println("      * " + iface.getDisplayName() + ":");
                         System.out.println("        -> http://" + addr.getHostAddress() + ":" + PORT + "/");
+                        System.out.println("        * Admin: http://" + addr.getHostAddress() + ":" + PORT + "/admin.html");
                     }
                 }
             }
         } catch (Exception ignored) {}
+        System.out.println();
+        System.out.println("  [2] Tên miền riêng (Không hiện localhost):");
+        System.out.println("      * Khách mua hàng: http://taphoa.local:" + PORT + "/");
+        System.out.println("      * Chủ tiệm Admin: http://taphoa.local:" + PORT + "/admin.html");
         System.out.println("=================================================================");
     }
 
@@ -412,6 +552,8 @@ public class WebServer {
             exchange.getResponseHeaders().set("Content-Type", mimeType);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
             byte[] bytes = Files.readAllBytes(file.toPath());
+            totalRequests.incrementAndGet();
+            totalBytesSent.addAndGet(bytes.length);
             exchange.sendResponseHeaders(200, bytes.length);
             OutputStream os = exchange.getResponseBody();
             os.write(bytes);
@@ -422,6 +564,8 @@ public class WebServer {
     // Helper methods
     private static void sendJsonResponse(HttpExchange exchange, int statusCode, String json) throws IOException {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+        totalRequests.incrementAndGet();
+        totalBytesSent.addAndGet(bytes.length);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "*");

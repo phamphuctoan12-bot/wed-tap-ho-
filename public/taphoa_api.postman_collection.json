@@ -1,0 +1,194 @@
+{
+  "info": {
+    "name": "Tiệm Tạp Hóa - REST API Collection",
+    "description": "Bộ sưu tập kiểm thử REST API cho Đồ án Nhập Môn Mạng / Lập Trình Web (Java HTTP Server)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Quản lý Sản Phẩm (Products)",
+      "item": [
+        {
+          "name": "Lấy tất cả sản phẩm",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+          }
+        },
+        {
+          "name": "Lọc sản phẩm theo danh mục",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?categoryId=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"],
+              "query": [{ "key": "categoryId", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Lọc sản phẩm theo khoảng giá",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?minPrice=10000&maxPrice=50000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "minPrice", "value": "10000" },
+                { "key": "maxPrice", "value": "50000" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Thêm sản phẩm mới",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nước tăng lực Monster Energy lon 355ml\",\n  \"categoryId\": 2,\n  \"unit\": \"Lon\",\n  \"price\": 32000,\n  \"stock\": 100,\n  \"expiryDate\": \"12/2028\",\n  \"image\": \"/images/sp6_sting.png\",\n  \"description\": \"Nước tăng lực hương vị sảng khoái bùng nổ.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Quản lý Đơn Hàng (Orders)",
+      "item": [
+        {
+          "name": "Danh sách tất cả đơn hàng",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api", "orders"] }
+          }
+        },
+        {
+          "name": "Đặt mua đơn hàng mới",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Lê Hoàng Long\",\n  \"phone\": \"0988776655\",\n  \"address\": \"456 Trần Phú, Quận 5, TP.HCM\",\n  \"note\": \"Giao giờ hành chính\",\n  \"paymentMethod\": \"Chuyển khoản ngân hàng\",\n  \"items\": [\n    { \"productId\": 1, \"name\": \"Mì Hảo Hảo tôm chua cay 75g\", \"unit\": \"Gói\", \"price\": 4500, \"quantity\": 10 }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api", "orders"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Mã Giảm Giá (Vouchers)",
+      "item": [
+        {
+          "name": "Danh sách Voucher",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vouchers", "host": ["{{baseUrl}}"], "path": ["api", "vouchers"] }
+          }
+        },
+        {
+          "name": "Kiểm tra & áp dụng Voucher",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"TAPHOA10\",\n  \"orderAmount\": 150000\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/vouchers/apply", "host": ["{{baseUrl}}"], "path": ["api", "vouchers", "apply"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Xác Thực & Người Dùng (Auth)",
+      "item": [
+        {
+          "name": "Đăng nhập tài khoản",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Quản Lý Kho Hàng (Inventory)",
+      "item": [
+        {
+          "name": "Tổng quan tồn kho & Giá trị vốn",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/inventory/summary", "host": ["{{baseUrl}}"], "path": ["api", "inventory", "summary"] }
+          }
+        },
+        {
+          "name": "Nhật ký biến động xuất nhập kho",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/inventory/logs", "host": ["{{baseUrl}}"], "path": ["api", "inventory", "logs"] }
+          }
+        },
+        {
+          "name": "Lập phiếu nhập kho từ nhà cung cấp",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"quantity\": 50,\n  \"importPrice\": 3600,\n  \"supplier\": \"Công ty Acecook Việt Nam\",\n  \"note\": \"Nhập hàng đợt 2\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/inventory/import", "host": ["{{baseUrl}}"], "path": ["api", "inventory", "import"] }
+          }
+        },
+        {
+          "name": "Kiểm kê và điều chỉnh tồn kho",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"newStock\": 85,\n  \"reason\": \"Kiểm kê định kỳ\",\n  \"note\": \"Thực tế kho còn 85 gói sau kiểm đếm\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/inventory/adjust", "host": ["{{baseUrl}}"], "path": ["api", "inventory", "adjust"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Giám Sát Server & Mạng (Server Health)",
+      "item": [
+        {
+          "name": "Kiểm tra tình trạng Server & Thông số Mạng",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/server/status", "host": ["{{baseUrl}}"], "path": ["api", "server", "status"] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://192.168.16.222:8080"
+    }
+  ]
+}

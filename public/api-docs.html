@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài Liệu & Công Cụ Test REST API - Tiệm Tạp Hóa</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #198754;
+            --bg-dark: #1e293b;
+        }
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #334155;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 16px 20px;
+            transition: all 0.2s ease;
+        }
+        .metric-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-color: #cbd5e1;
+        }
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .api-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+        .api-card:hover {
+            border-color: #94a3b8;
+        }
+        .api-header {
+            padding: 14px 20px;
+            background: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid transparent;
+        }
+        .api-card.open .api-header {
+            border-bottom-color: #e2e8f0;
+            background: #f8fafc;
+        }
+        .api-body {
+            padding: 20px;
+            display: none;
+            background: #ffffff;
+        }
+        .api-card.open .api-body {
+            display: block;
+        }
+        .method-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+            min-width: 65px;
+            text-align: center;
+            display: inline-block;
+        }
+        .method-get { background: #dcfce7; color: #15803d; }
+        .method-post { background: #dbeafe; color: #1d4ed8; }
+        .method-put { background: #ffedd5; color: #c2410c; }
+        .method-delete { background: #fee2e2; color: #b91c1c; }
+        
+        .code-box {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-family: Consolas, Monaco, "Courier New", monospace;
+            font-size: 0.85rem;
+            max-height: 280px;
+            overflow: auto;
+            position: relative;
+        }
+        .code-editor {
+            font-family: Consolas, Monaco, "Courier New", monospace;
+            font-size: 0.85rem;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+        .status-pill {
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .status-200 { background: #dcfce7; color: #166534; }
+        .status-400 { background: #fee2e2; color: #991b1b; }
+        .category-header {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e293b;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top py-2 shadow-sm">
+        <div class="container-fluid px-lg-4">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <span class="fs-4 me-2">🏪</span>
+                <div>
+                    <span class="text-white">TIỆM TẠP HÓA</span>
+                    <span class="badge bg-success ms-2 font-monospace" style="font-size: 0.7rem;">REST API v1.0</span>
+                </div>
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-cart3 me-1"></i> Trang Mua Sắm
+                </a>
+                <a href="/admin.html" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-speedometer2 me-1"></i> Trang Quản Trị
+                </a>
+                <button class="btn btn-warning btn-sm fw-bold" onclick="downloadPostmanCollection()">
+                    <i class="bi bi-download me-1"></i> Tải Postman Collection
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-lg-4 py-4">
+        
+        <!-- Live Server & Network Metrics Dashboard -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="metric-card">
+                    <div class="text-muted small fw-semibold">TRẠNG THÁI MÁY CHỦ</div>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="spinner-grow spinner-grow-sm text-success" role="status"></span>
+                        <span class="metric-value text-success" id="serverStatusText">ONLINE</span>
+                    </div>
+                    <small class="text-muted" id="serverPortText">TCP Port 8080</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="metric-card">
+                    <div class="text-muted small fw-semibold">THỜI GIAN HOẠT ĐỘNG (UPTIME)</div>
+                    <div class="metric-value mt-1" id="serverUptimeText">--:--:--</div>
+                    <small class="text-muted">Kể từ khi bật máy chủ</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="metric-card">
+                    <div class="text-muted small fw-semibold">TỔNG REQUEST ĐÃ XỬ LÝ</div>
+                    <div class="metric-value mt-1 text-primary" id="serverRequestsText">0</div>
+                    <small class="text-muted" id="serverBytesText">0 KB truyền tải</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="metric-card">
+                    <div class="text-muted small fw-semibold">ĐỘ TRỄ PHẢN HỒI (LATENCY)</div>
+                    <div class="metric-value mt-1 text-info" id="serverPingText">-- ms</div>
+                    <small class="text-success"><i class="bi bi-lightning-charge-fill"></i> Tốc độ cực nhanh</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Info Banner -->
+        <div class="alert alert-light border shadow-sm rounded-3 mb-4 p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <strong class="text-dark"><i class="bi bi-hdd-network-fill text-primary me-2"></i>Các Địa Chỉ Mạng Đang Lắng Nghe:</strong>
+                <span class="badge bg-light text-dark border ms-2" id="serverIpsDisplay">Đang tải IP...</span>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-primary" onclick="testPing()">
+                    <i class="bi bi-arrow-repeat me-1"></i> Đo Lại Độ Trễ (Ping)
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Title & Description -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-braces-asterisk text-success me-2"></i>Bảng Thử Nghiệm REST API Trực Tiếp (Interactive API Explorer)</h4>
+                <p class="text-muted small mb-0">Hệ thống mô phỏng Postman & Swagger UI tích hợp sẵn, bấm <strong>"GỬI REQUEST"</strong> để kiểm tra trực tiếp phản hồi của máy chủ HTTP.</p>
+            </div>
+        </div>
+
+        <!-- API Categories -->
+        <div class="row">
+            <div class="col-lg-12">
+
+                <!-- 1. SẢN PHẨM (PRODUCTS) -->
+                <div class="category-header">
+                    <span class="fs-5">📦</span> 1. QUẢN LÝ SẢN PHẨM & MẶT HÀNG (PRODUCTS API)
+                </div>
+
+                <!-- API 1: GET /api/products -->
+                <div class="api-card open" id="card_get_products">
+                    <div class="api-header" onclick="toggleCard('card_get_products')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="font-monospace fw-bold text-dark">/api/products</span>
+                            <span class="text-muted small d-none d-md-inline">- Lấy danh sách sản phẩm (Hỗ trợ lọc theo danh mục, khoảng giá, tìm kiếm)</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Tham số truy vấn (Query Parameters):</label>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-4">
+                                        <input type="text" id="p_cat" class="form-control form-control-sm code-editor" placeholder="categoryId (VD: 1)">
+                                    </div>
+                                    <div class="col-4">
+                                        <input type="text" id="p_search" class="form-control form-control-sm code-editor" placeholder="search (VD: omachi)">
+                                    </div>
+                                    <div class="col-4">
+                                        <input type="text" id="p_sort" class="form-control form-control-sm code-editor" placeholder="sort (price_asc / price_desc)">
+                                    </div>
+                                </div>
+                                <button class="btn btn-success btn-sm fw-bold px-3" onclick="callGetProducts()">
+                                    <i class="bi bi-send-fill me-1"></i> GỬI REQUEST
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="copyCurl('GET', '/api/products')">
+                                    <i class="bi bi-terminal me-1"></i> Copy cURL
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_get_products_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_get_products">// Bấm "GỬI REQUEST" để xem dữ liệu...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API 2: POST /api/products -->
+                <div class="api-card" id="card_post_product">
+                    <div class="api-header" onclick="toggleCard('card_post_product')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-post">POST</span>
+                            <span class="font-monospace fw-bold text-dark">/api/products</span>
+                            <span class="text-muted small d-none d-md-inline">- Thêm hoặc cập nhật sản phẩm tạp hóa mới</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Payload (Request Body JSON):</label>
+                                <textarea id="body_post_product" class="form-control code-editor mb-2" rows="7">{
+  "name": "Nước tăng lực Monster Energy lon 355ml",
+  "categoryId": 2,
+  "unit": "Lon",
+  "price": 32000,
+  "stock": 100,
+  "expiryDate": "12/2028",
+  "image": "https://cdn.tgdd.vn/Products/Images/2443/76451/bhx/nuoc-ngot-coca-cola-lon-320ml-202304131107525481.jpg",
+  "description": "Nước tăng lực nhập khẩu hương vị sảng khoái bùng nổ."
+}</textarea>
+                                <button class="btn btn-primary btn-sm fw-bold px-3" onclick="callPostProduct()">
+                                    <i class="bi bi-send-fill me-1"></i> GỬI REQUEST
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_post_product_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_post_product">// Bấm "GỬI REQUEST" để xem kết quả...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. ĐƠN HÀNG (ORDERS) -->
+                <div class="category-header">
+                    <span class="fs-5">🛒</span> 2. QUẢN LÝ ĐƠN HÀNG & BÁN LẺ (ORDERS API)
+                </div>
+
+                <!-- API 3: GET /api/orders -->
+                <div class="api-card" id="card_get_orders">
+                    <div class="api-header" onclick="toggleCard('card_get_orders')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="font-monospace fw-bold text-dark">/api/orders</span>
+                            <span class="text-muted small d-none d-md-inline">- Danh sách đơn hàng hoặc tra cứu theo mã vạch (?barcode=ORD-00001)</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-2">Endpoint này trả về danh sách đơn hàng. Nếu truyền tham số <code>?barcode=ORD-00001</code> hoặc <code>?id=1</code>, hệ thống sẽ trả về chi tiết đơn hàng tương ứng phục vụ máy quét mã vạch POS.</p>
+                                <button class="btn btn-success btn-sm fw-bold px-3" onclick="callGetOrders()">
+                                    <i class="bi bi-send-fill me-1"></i> GỬI REQUEST
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_get_orders_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_get_orders">// Bấm "GỬI REQUEST" để xem dữ liệu...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API 4: POST /api/orders -->
+                <div class="api-card" id="card_post_order">
+                    <div class="api-header" onclick="toggleCard('card_post_order')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-post">POST</span>
+                            <span class="font-monospace fw-bold text-dark">/api/orders</span>
+                            <span class="text-muted small d-none d-md-inline">- Tạo đơn mua hàng mới từ khách hàng</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Payload (Request Body JSON):</label>
+                                <textarea id="body_post_order" class="form-control code-editor mb-2" rows="9">{
+  "customerName": "Lê Hoàng Long",
+  "phone": "0988776655",
+  "address": "456 Trần Phú, Quận 5, TP.HCM",
+  "note": "Giao giờ nghỉ trưa",
+  "paymentMethod": "Chuyển khoản ngân hàng",
+  "items": [
+    { "productId": 1, "name": "Mì Hảo Hảo tôm chua cay 75g", "unit": "Gói", "price": 4500, "quantity": 10 },
+    { "productId": 5, "name": "Nước ngọt Coca-Cola lon 320ml", "unit": "Lon", "price": 10000, "quantity": 4 }
+  ]
+}</textarea>
+                                <button class="btn btn-primary btn-sm fw-bold px-3" onclick="callPostOrder()">
+                                    <i class="bi bi-send-fill me-1"></i> GỬI REQUEST
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_post_order_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_post_order">// Bấm "GỬI REQUEST" để thử tạo đơn...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. MÃ GIẢM GIÁ (VOUCHERS) -->
+                <div class="category-header">
+                    <span class="fs-5">🎟️</span> 3. MÃ KHUYẾN MÃI & GIẢM GIÁ (VOUCHERS API)
+                </div>
+
+                <!-- API 5: POST /api/vouchers/apply -->
+                <div class="api-card" id="card_apply_voucher">
+                    <div class="api-header" onclick="toggleCard('card_apply_voucher')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-post">POST</span>
+                            <span class="font-monospace fw-bold text-dark">/api/vouchers/apply</span>
+                            <span class="text-muted small d-none d-md-inline">- Kiểm tra & áp dụng mã voucher cho giỏ hàng</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Payload (Code & Giá trị đơn hàng):</label>
+                                <textarea id="body_voucher" class="form-control code-editor mb-2" rows="4">{
+  "code": "TAPHOA10",
+  "orderAmount": 120000
+}</textarea>
+                                <small class="text-muted d-block mb-2">Thử các mã: <code>TAPHOA10</code> (giảm 10%), <code>FREESHIP</code> (giảm 15k), <code>GIAM20K</code> (giảm 20k).</small>
+                                <button class="btn btn-primary btn-sm fw-bold px-3" onclick="callApplyVoucher()">
+                                    <i class="bi bi-send-fill me-1"></i> KIỂM TRA MÃ
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_voucher_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_voucher">// Bấm "KIỂM TRA MÃ" để xem kết quả...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. XÁC THỰC (AUTH) -->
+                <div class="category-header">
+                    <span class="fs-5">🔐</span> 4. ĐĂNG NHẬP & BẢO MẬT (AUTH API)
+                </div>
+
+                <!-- API 6: POST /api/auth/login -->
+                <div class="api-card" id="card_auth_login">
+                    <div class="api-header" onclick="toggleCard('card_auth_login')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-post">POST</span>
+                            <span class="font-monospace fw-bold text-dark">/api/auth/login</span>
+                            <span class="text-muted small d-none d-md-inline">- Đăng nhập tài khoản (Admin hoặc Khách hàng)</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Payload (Tên đăng nhập & Mật khẩu):</label>
+                                <textarea id="body_login" class="form-control code-editor mb-2" rows="4">{
+  "username": "admin",
+  "password": "admin123"
+}</textarea>
+                                <small class="text-muted d-block mb-2">Tài khoản mẫu: <code>admin / admin123</code> hoặc <code>khachhang / 123456</code></small>
+                                <button class="btn btn-primary btn-sm fw-bold px-3" onclick="callLogin()">
+                                    <i class="bi bi-send-fill me-1"></i> TEST ĐĂNG NHẬP
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_login_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_login">// Bấm "TEST ĐĂNG NHẬP" để xem token/user...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. QUẢN LÝ KHO HÀNG (INVENTORY MANAGEMENT API) -->
+                <div class="category-header">
+                    <span class="fs-5">📦</span> 5. QUẢN LÝ KHO HÀNG & BIẾN ĐỘNG TỒN KHO (INVENTORY API)
+                </div>
+
+                <!-- API: GET /api/inventory/summary -->
+                <div class="api-card" id="card_inv_summary">
+                    <div class="api-header" onclick="toggleCard('card_inv_summary')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="font-monospace fw-bold text-dark">/api/inventory/summary</span>
+                            <span class="text-muted small d-none d-md-inline">- Thống kê tổng số lượng tồn kho, giá trị vốn, tồn thấp & hết hàng</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-2">Endpoint trả về tổng quan số liệu kho thời gian thực phục vụ báo cáo quản trị.</p>
+                                <button class="btn btn-success btn-sm fw-bold px-3" onclick="callGetInvSummary()">
+                                    <i class="bi bi-send-fill me-1"></i> GỬI REQUEST
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_inv_summary_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_inv_summary">// Bấm "GỬI REQUEST" để xem kết quả...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API: GET /api/inventory/logs -->
+                <div class="api-card" id="card_inv_logs">
+                    <div class="api-header" onclick="toggleCard('card_inv_logs')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="font-monospace fw-bold text-dark">/api/inventory/logs</span>
+                            <span class="text-muted small d-none d-md-inline">- Nhật ký biến động kho (Nhập hàng NCC, Xuất bán đơn, Điều chỉnh kiểm kê)</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-2">Truy xuất lịch sử toàn bộ các giao dịch xuất/nhập/kiểm kê kho kèm thời gian và NCC.</p>
+                                <button class="btn btn-success btn-sm fw-bold px-3" onclick="callGetInvLogs()">
+                                    <i class="bi bi-send-fill me-1"></i> GỬI REQUEST
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_inv_logs_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_inv_logs">// Bấm "GỬI REQUEST" để xem kết quả...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. GIÁM SÁT MÁY CHỦ (SERVER STATUS) -->
+                <div class="category-header">
+                    <span class="fs-5">💻</span> 6. THÔNG SỐ HỆ THỐNG & MẠNG (NETWORK METRICS API)
+                </div>
+
+                <!-- API 7: GET /api/server/status -->
+                <div class="api-card" id="card_server_status">
+                    <div class="api-header" onclick="toggleCard('card_server_status')">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="font-monospace fw-bold text-dark">/api/server/status</span>
+                            <span class="text-muted small d-none d-md-inline">- Kiểm tra tình trạng Server, Uptime, Request count & Địa chỉ IP</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </div>
+                    <div class="api-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-2">Endpoint này dùng để giám sát trạng thái TCP Server, đo lường số lượng kết nối mạng và bộ nhớ JVM.</p>
+                                <button class="btn btn-success btn-sm fw-bold px-3" onclick="callServerStatus()">
+                                    <i class="bi bi-send-fill me-1"></i> GỬI REQUEST
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold">Phản hồi (Response):</span>
+                                    <span id="res_status_meta"></span>
+                                </div>
+                                <div class="code-box" id="res_status">// Bấm "GỬI REQUEST" để xem thông số...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function toggleCard(cardId) {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.toggle('open');
+            }
+        }
+
+        // Đếm ping & cập nhật thông số hệ thống tự động
+        async function fetchServerMetrics() {
+            const t0 = performance.now();
+            try {
+                const res = await fetch('/api/server/status');
+                const t1 = performance.now();
+                const latency = Math.round(t1 - t0);
+                document.getElementById('serverPingText').innerText = latency + ' ms';
+
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('serverStatusText').innerText = data.status || 'ONLINE';
+                    document.getElementById('serverUptimeText').innerText = data.uptime || '--';
+                    document.getElementById('serverRequestsText').innerText = (data.totalRequests || 0).toLocaleString();
+                    const kb = Math.round((data.totalBytesSent || 0) / 1024);
+                    document.getElementById('serverBytesText').innerText = kb + ' KB truyền tải';
+                    document.getElementById('serverPortText').innerText = `TCP Port ${data.tcpPort || 8080}`;
+
+                    if (data.ipAddresses && data.ipAddresses.length > 0) {
+                        document.getElementById('serverIpsDisplay').innerText = data.ipAddresses.join(' | ');
+                    }
+                }
+            } catch (err) {
+                document.getElementById('serverStatusText').innerText = 'OFFLINE';
+                document.getElementById('serverStatusText').className = 'metric-value text-danger';
+            }
+        }
+
+        function testPing() {
+            fetchServerMetrics();
+        }
+
+        // Tự động load metrics mỗi 5 giây
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchServerMetrics();
+            setInterval(fetchServerMetrics, 5000);
+            callGetProducts(); // Tự gọi mẫu API đầu tiên
+        });
+
+        // Hàm gọi API tổng quát
+        async function executeApiCall(url, method, body, resBoxId, metaBoxId) {
+            const resBox = document.getElementById(resBoxId);
+            const metaBox = document.getElementById(metaBoxId);
+            resBox.innerText = 'Đang gửi gói tin HTTP qua mạng...';
+
+            const startTime = performance.now();
+            try {
+                const options = {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (body && (method === 'POST' || method === 'PUT')) {
+                    options.body = body;
+                }
+
+                const response = await fetch(url, options);
+                const latency = Math.round(performance.now() - startTime);
+                const statusClass = response.ok ? 'status-200' : 'status-400';
+
+                metaBox.innerHTML = `
+                    <span class="status-pill ${statusClass}">HTTP ${response.status} ${response.statusText || ''}</span>
+                    <span class="badge bg-secondary font-monospace ms-1">${latency} ms</span>
+                `;
+
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const json = await response.json();
+                    resBox.innerText = JSON.stringify(json, null, 2);
+                } else {
+                    const text = await response.text();
+                    resBox.innerText = text;
+                }
+                fetchServerMetrics(); // Cập nhật lại bộ đếm request
+            } catch (err) {
+                const latency = Math.round(performance.now() - startTime);
+                metaBox.innerHTML = `<span class="status-pill status-400">NETWORK ERROR</span> <span class="badge bg-secondary ms-1">${latency} ms</span>`;
+                resBox.innerText = "Lỗi kết nối mạng: " + err.message;
+            }
+        }
+
+        function callGetProducts() {
+            let url = '/api/products';
+            const cat = document.getElementById('p_cat').value.trim();
+            const search = document.getElementById('p_search').value.trim();
+            const sort = document.getElementById('p_sort').value.trim();
+            const params = [];
+            if (cat) params.push(`categoryId=${cat}`);
+            if (search) params.push(`search=${encodeURIComponent(search)}`);
+            if (sort) params.push(`sort=${sort}`);
+            if (params.length > 0) url += '?' + params.join('&');
+
+            executeApiCall(url, 'GET', null, 'res_get_products', 'res_get_products_meta');
+        }
+
+        function callPostProduct() {
+            const body = document.getElementById('body_post_product').value;
+            executeApiCall('/api/products', 'POST', body, 'res_post_product', 'res_post_product_meta');
+        }
+
+        function callGetOrders() {
+            executeApiCall('/api/orders', 'GET', null, 'res_get_orders', 'res_get_orders_meta');
+        }
+
+        function callPostOrder() {
+            const body = document.getElementById('body_post_order').value;
+            executeApiCall('/api/orders', 'POST', body, 'res_post_order', 'res_post_order_meta');
+        }
+
+        function callApplyVoucher() {
+            const body = document.getElementById('body_voucher').value;
+            executeApiCall('/api/vouchers/apply', 'POST', body, 'res_voucher', 'res_voucher_meta');
+        }
+
+        function callLogin() {
+            const body = document.getElementById('body_login').value;
+            executeApiCall('/api/auth/login', 'POST', body, 'res_login', 'res_login_meta');
+        }
+
+        function callServerStatus() {
+            executeApiCall('/api/server/status', 'GET', null, 'res_status', 'res_status_meta');
+        }
+
+        function callGetInvSummary() {
+            executeApiCall('/api/inventory/summary', 'GET', null, 'res_inv_summary', 'res_inv_summary_meta');
+        }
+
+        function callGetInvLogs() {
+            executeApiCall('/api/inventory/logs', 'GET', null, 'res_inv_logs', 'res_inv_logs_meta');
+        }
+
+        function copyCurl(method, path) {
+            const origin = window.location.origin;
+            const curl = `curl -X ${method} "${origin}${path}"`;
+            navigator.clipboard.writeText(curl);
+            alert("Đã sao chép lệnh cURL:\n" + curl);
+        }
+
+        // Tải file Postman Collection JSON
+        function downloadPostmanCollection() {
+            window.location.href = '/taphoa_api.postman_collection.json';
+        }
+    </script>
+</body>
+</html>

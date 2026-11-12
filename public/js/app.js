@@ -1,5 +1,5 @@
 // ==========================================
-// TẠP HÓA XANH - FRONTEND JAVASCRIPT
+// TIỆM TẠP HÓA - FRONTEND JAVASCRIPT
 // ==========================================
 
 let allProducts = [];
@@ -84,7 +84,7 @@ async function handleLogin(e) {
             Swal.fire({
                 icon: 'success',
                 title: 'Đăng nhập thành công!',
-                text: `Chào mừng ${currentUser.fullName} đến với Tạp Hóa Xanh!`,
+                text: `Chào mừng ${currentUser.fullName} đến với Tiệm Tạp Hóa!`,
                 timer: 2000
             });
         } else {
@@ -126,7 +126,7 @@ async function handleRegister(e) {
             Swal.fire({
                 icon: 'success',
                 title: '🎉 Đăng ký thành công!',
-                text: `Chào mừng ${currentUser.fullName} đã trở thành thành viên Tạp Hóa Xanh!`,
+                text: `Chào mừng ${currentUser.fullName} đã trở thành thành viên Tiệm Tạp Hóa!`,
                 timer: 2000
             });
         } else {
@@ -413,29 +413,41 @@ function renderProducts(products) {
         return;
     }
 
-    container.innerHTML = products.map(p => `
-        <div class="col">
-            <div class="product-card">
-                <div class="product-image-container">
-                    ${p.image || '🛒'}
-                </div>
-                <div class="product-body">
-                    <span class="product-unit">${p.unit}</span>
-                    <h6 class="product-title" title="${p.name}">${p.name}</h6>
-                    <div class="d-flex justify-content-between align-items-baseline mb-1">
-                        <span class="product-price">${formatMoney(p.price)}</span>
-                        <small class="text-muted">Còn: ${p.stock}</small>
+    container.innerHTML = products.map(p => {
+        const isUrl = p.image && (p.image.startsWith('http://') || p.image.startsWith('https://') || p.image.startsWith('/'));
+        const imgHtml = isUrl 
+            ? `<img src="${p.image}" class="product-real-img" alt="${p.name}" onerror="this.onerror=null;this.parentElement.innerHTML='🛒';">`
+            : `<span class="product-fallback-icon">${p.image || '🛒'}</span>`;
+
+        return `
+            <div class="col">
+                <div class="product-card">
+                    <div class="product-image-container cursor-pointer" onclick="openProductDetailModal(${p.id})">
+                        ${imgHtml}
                     </div>
-                    <div class="product-expiry">
-                        <i class="bi bi-calendar-check me-1"></i>HSD: ${p.expiryDate || 'Mới sản xuất'}
+                    <div class="product-body">
+                        <span class="product-unit">${p.unit}</span>
+                        <h6 class="product-title cursor-pointer" title="${p.name}" onclick="openProductDetailModal(${p.id})">${p.name}</h6>
+                        <div class="d-flex justify-content-between align-items-baseline mb-1">
+                            <span class="product-price">${formatMoney(p.price)}</span>
+                            <small class="text-muted">Còn: ${p.stock}</small>
+                        </div>
+                        <div class="product-expiry">
+                            <i class="bi bi-calendar-check me-1"></i>HSD: ${p.expiryDate || 'Mới sản xuất'}
+                        </div>
+                        <div class="d-flex gap-1 mt-auto">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="openProductDetailModal(${p.id})" title="Xem chi tiết">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-add-cart" onclick="addToCart(${p.id})">
+                                <i class="bi bi-cart-plus me-1"></i> Chọn mua
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn btn-add-cart" onclick="addToCart(${p.id})">
-                        <i class="bi bi-cart-plus me-1"></i> Chọn mua
-                    </button>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // 4. Lọc & Tìm kiếm
@@ -456,6 +468,65 @@ if (document.getElementById('searchInput')) {
     document.getElementById('searchInput').addEventListener('keyup', (e) => {
         if (e.key === 'Enter') performSearch();
     });
+}
+
+// 4.1. Mở Modal Xem Chi Tiết Mặt Hàng
+async function openProductDetailModal(productId) {
+    const p = allProducts.find(item => item.id === productId);
+    if (!p) return;
+
+    document.getElementById('detailName').innerText = p.name;
+    document.getElementById('detailPrice').innerText = formatMoney(p.price);
+    document.getElementById('detailStock').innerText = `Còn: ${p.stock} ${p.unit}`;
+    document.getElementById('detailCategory').innerText = p.categoryName || 'Tạp hóa';
+    document.getElementById('detailUnit').innerText = p.unit;
+    document.getElementById('detailExpiry').innerText = p.expiryDate || 'Mới sản xuất';
+    document.getElementById('detailDesc').innerText = p.description || 'Sản phẩm chất lượng cao, an toàn cho cả gia đình.';
+
+    const imgEl = document.getElementById('detailImg');
+    const isUrl = p.image && (p.image.startsWith('http://') || p.image.startsWith('https://') || p.image.startsWith('/'));
+    if (isUrl) {
+        imgEl.src = p.image;
+        imgEl.style.display = 'block';
+    } else {
+        imgEl.style.display = 'none';
+    }
+
+    const btnAdd = document.getElementById('detailBtnAddToCart');
+    btnAdd.onclick = () => {
+        addToCart(p.id);
+        const modalEl = document.getElementById('productDetailModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    };
+
+    // Tải đánh giá thực tế của món hàng này
+    const revContainer = document.getElementById('detailReviewsContainer');
+    revContainer.innerHTML = '<em>Đang tải đánh giá...</em>';
+    try {
+        const res = await fetch(`/api/reviews?productId=${p.id}`);
+        const reviews = await res.json();
+        if (reviews.length === 0) {
+            revContainer.innerHTML = '<em>Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên mua và đánh giá!</em>';
+        } else {
+            revContainer.innerHTML = reviews.map(r => `
+                <div class="border-bottom py-2">
+                    <div class="d-flex justify-content-between">
+                        <strong>${r.userName}</strong>
+                        <span class="text-warning">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                    </div>
+                    <p class="mb-0 text-dark">${r.comment}</p>
+                    <small class="text-muted" style="font-size: 0.75rem;">${r.createdAt}</small>
+                </div>
+            `).join('');
+        }
+    } catch (err) {
+        revContainer.innerHTML = '<em>Chưa có đánh giá.</em>';
+    }
+
+    const modalEl = document.getElementById('productDetailModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
 }
 
 // 5. Quản lý Giỏ Hàng
@@ -560,6 +631,39 @@ async function applyVoucherCode() {
     }
 }
 
+// Cập nhật mã VietQR động khi khách chọn thanh toán Chuyển khoản / QR
+function updatePaymentQrCode() {
+    const paymentEl = document.getElementById('custPayment');
+    const box = document.getElementById('bankQrBox');
+    if (!box || !paymentEl) return;
+
+    const method = paymentEl.value;
+    if (method.includes('Chuyển khoản') || method.includes('MoMo') || method.includes('ZaloPay')) {
+        let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        let shipping = subtotal >= 150000 || subtotal === 0 ? 0 : 15000;
+        let discount = appliedDiscount;
+        let total = Math.max(0, subtotal - discount + shipping);
+
+        const phone = document.getElementById('custPhone') ? document.getElementById('custPhone').value.trim() : '';
+        const note = phone ? `TAPHOA ${phone.slice(-4)}` : `TAPHOA ${Math.floor(1000 + Math.random() * 9000)}`;
+
+        const amtEl = document.getElementById('qrCheckoutAmount');
+        const noteEl = document.getElementById('qrCheckoutNote');
+        const imgEl = document.getElementById('checkoutQrImage');
+
+        if (amtEl) amtEl.innerText = formatMoney(total);
+        if (noteEl) noteEl.innerText = note;
+
+        if (imgEl) {
+            imgEl.src = `https://img.vietqr.io/image/MB-0900000001-compact2.png?amount=${total}&addInfo=${encodeURIComponent(note)}&accountName=TIEM%20TAP%20HOA`;
+        }
+
+        box.classList.remove('d-none');
+    } else {
+        box.classList.add('d-none');
+    }
+}
+
 function renderCart() {
     const tbody = document.getElementById('cartTableBody');
     const emptyView = document.getElementById('emptyCartView');
@@ -626,6 +730,8 @@ function renderCart() {
         if (custPhoneEl && !custPhoneEl.value) custPhoneEl.value = currentUser.phone || '';
         if (custAddrEl && !custAddrEl.value) custAddrEl.value = currentUser.address || '';
     }
+
+    updatePaymentQrCode();
 }
 
 // 6. Gửi Đơn Đặt Hàng & Xuất Hóa Đơn Trực Tiếp
@@ -721,13 +827,155 @@ function showCustomerInvoice(data) {
     document.getElementById('invShipping').innerText = data.shipping === 0 ? 'Miễn phí (0 đ)' : formatMoney(data.shipping);
     document.getElementById('invTotal').innerText = formatMoney(data.total);
 
+    // Hiển thị mã VietQR nếu chọn Chuyển khoản ngân hàng / Ví điện tử
+    const invQrBox = document.getElementById('invBankQrBox');
+    if (invQrBox) {
+        if (data.paymentMethod && (data.paymentMethod.includes('Chuyển khoản') || data.paymentMethod.includes('MoMo') || data.paymentMethod.includes('ZaloPay'))) {
+            const note = `TAPHOA ${data.orderId || Math.floor(1000 + Math.random() * 9000)}`;
+            const qrUrl = `https://img.vietqr.io/image/MB-0900000001-compact2.png?amount=${data.total}&addInfo=${encodeURIComponent(note)}&accountName=TIEM%20TAP%20HOA`;
+            const invImg = document.getElementById('invQrImage');
+            const invAmt = document.getElementById('invQrAmount');
+            const invNote = document.getElementById('invQrNote');
+            if (invImg) invImg.src = qrUrl;
+            if (invAmt) invAmt.innerText = formatMoney(data.total);
+            if (invNote) invNote.innerText = note;
+            invQrBox.classList.remove('d-none');
+        } else {
+            invQrBox.classList.add('d-none');
+        }
+    }
+
+    // Tạo mã vạch Barcode Code128 trên hóa đơn khách hàng
+    try {
+        if (typeof JsBarcode === 'function' && document.getElementById('invBarcodeSvg')) {
+            const barcodeVal = "ORD-" + String(data.orderId || 1).padStart(5, '0');
+            JsBarcode("#invBarcodeSvg", barcodeVal, {
+                format: "CODE128",
+                width: 1.8,
+                height: 42,
+                displayValue: true,
+                fontSize: 13,
+                font: "monospace"
+            });
+        }
+    } catch (e) {
+        console.warn("JsBarcode error:", e);
+    }
+
     const invModalEl = document.getElementById('customerInvoiceModal');
     const invModal = new bootstrap.Modal(invModalEl);
     invModal.show();
 }
 
+function printInvoiceElement(elementId, title = "Hóa Đơn Mua Hàng") {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    // Mở cửa sổ in chuyên dụng với kích thước rõ ràng để trình duyệt Edge / Chrome dựng bản in ngay lập tức
+    const printWindow = window.open('', '_blank', 'width=850,height=900,scrollbars=yes,resizable=yes');
+    if (!printWindow) {
+        // Dự phòng nếu trình duyệt chặn popup
+        window.print();
+        return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${title}</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+                @page {
+                    size: A4 portrait;
+                    margin: 12mm;
+                }
+                body {
+                    background: #f8f9fa;
+                    color: #212529;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                    padding: 20px;
+                }
+                .invoice-print-card {
+                    max-width: 650px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    padding: 30px;
+                    border: 1px solid #dee2e6;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+                }
+                .no-print-toolbar {
+                    max-width: 650px;
+                    margin: 0 auto 15px auto;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    padding: 8px 10px !important;
+                }
+                img {
+                    max-width: 100%;
+                    height: auto;
+                }
+                @media print {
+                    body {
+                        background: #ffffff;
+                        padding: 0;
+                    }
+                    .invoice-print-card {
+                        border: none;
+                        box-shadow: none;
+                        padding: 0;
+                        max-width: 100%;
+                    }
+                    .no-print-toolbar {
+                        display: none !important;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="no-print-toolbar">
+                <button onclick="window.print()" class="btn btn-primary fw-bold px-3 py-2">
+                    🖨️ Bấm Vào Đây Để In / Lưu PDF
+                </button>
+                <button onclick="window.close()" class="btn btn-secondary px-3 py-2">
+                    ✖️ Đóng Cửa Sổ
+                </button>
+            </div>
+            <div class="invoice-print-card">
+                ${el.innerHTML}
+            </div>
+            <script>
+                // Tự động kích hoạt in sau khi load CSS và ảnh VietQR xong
+                window.addEventListener('load', function() {
+                    setTimeout(function() {
+                        window.focus();
+                        window.print();
+                    }, 400);
+                });
+            </script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
 function printCustomerInvoice() {
-    window.print();
+    printInvoiceElement('customerInvoiceArea', 'Hóa Đơn Mua Hàng - Tiệm Tạp Hóa');
+}
+
+function printAdminBill() {
+    printInvoiceElement('printBillArea', 'Phiếu Gửi Hàng - Tiệm Tạp Hóa');
 }
 
 let myOrdersCache = [];
@@ -851,6 +1099,23 @@ function openPrintBillModal(orderId) {
         </tr>
     `).join('');
 
+    // Tạo mã vạch Barcode Code128 trên bill giao hàng
+    try {
+        if (typeof JsBarcode === 'function' && document.getElementById('billBarcodeSvg')) {
+            const barcodeVal = "ORD-" + String(o.id || 1).padStart(5, '0');
+            JsBarcode("#billBarcodeSvg", barcodeVal, {
+                format: "CODE128",
+                width: 1.8,
+                height: 42,
+                displayValue: true,
+                fontSize: 13,
+                font: "monospace"
+            });
+        }
+    } catch (e) {
+        console.warn("JsBarcode bill error:", e);
+    }
+
     const modalEl = document.getElementById('printBillModal');
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
@@ -922,10 +1187,15 @@ async function loadAdminProducts() {
                 ? `<span class="badge bg-danger text-white"><i class="bi bi-exclamation-triangle-fill me-1"></i>TỒN THẤP (${p.stock})</span>` 
                 : `<span class="badge bg-success">${p.stock}</span>`;
 
+            const isUrl = p.image && (p.image.startsWith('http://') || p.image.startsWith('https://') || p.image.startsWith('/'));
+            const imgThumb = isUrl 
+                ? `<img src="${p.image}" style="width: 45px; height: 45px; object-fit: contain; border-radius: 6px; background: white; padding: 2px; border: 1px solid #dee2e6;" alt="Ảnh">` 
+                : `<span class="fs-4">${p.image || '🛒'}</span>`;
+
             return `
                 <tr class="${isLowStock ? 'table-warning' : ''}">
                     <td><strong>#${p.id}</strong></td>
-                    <td class="fs-4">${p.image || '🛒'}</td>
+                    <td class="text-center">${imgThumb}</td>
                     <td><strong>${p.name}</strong><br><small class="text-muted">${p.description || ''}</small></td>
                     <td><span class="badge bg-info text-dark">${p.categoryName || 'Tạp hóa'}</span></td>
                     <td><span class="badge bg-light text-dark border">${p.unit}</span></td>
@@ -934,6 +1204,9 @@ async function loadAdminProducts() {
                     <td><small class="badge bg-light text-muted border">${p.expiryDate || 'N/A'}</small></td>
                     <td>
                         <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-success" onclick="openQuickStockIn(${p.id})" title="Nhập hàng vào kho">
+                                <i class="bi bi-box-arrow-in-down me-1"></i>Nhập kho
+                            </button>
                             <button class="btn btn-outline-primary" onclick="openEditProductModal(${p.id})" title="Chỉnh sửa">
                                 <i class="bi bi-pencil-square me-1"></i>Sửa
                             </button>
@@ -1194,5 +1467,523 @@ async function loadAdminReports() {
         }).join('');
     } catch (err) {
         console.error(err);
+    }
+}
+
+// --- QUẢN LÝ KHO HÀNG & BIẾN ĐỘNG TỒN KHO (INVENTORY MANAGEMENT) ---
+let adminProductsCache = [];
+
+async function loadAdminInventory() {
+    await Promise.all([
+        loadInventorySummary(),
+        loadInventoryLogs(),
+        populateInventoryProductSelects()
+    ]);
+}
+
+async function loadInventorySummary() {
+    try {
+        const res = await fetch('/api/inventory/summary');
+        const data = await res.json();
+        
+        const elTotalProducts = document.getElementById('invTotalProducts');
+        if (elTotalProducts) elTotalProducts.innerText = data.totalProducts || 0;
+        
+        const elTotalStock = document.getElementById('invTotalStock');
+        if (elTotalStock) elTotalStock.innerText = (data.totalStockUnits || data.totalStockQuantity || 0).toLocaleString('vi-VN');
+        
+        const elTotalVal = document.getElementById('invTotalStockValue');
+        if (elTotalVal) elTotalVal.innerText = formatMoney(data.totalStockValue || data.estimatedInventoryValue || 0);
+        
+        const elLowStock = document.getElementById('invLowStockCount');
+        if (elLowStock) elLowStock.innerText = data.lowStockCount || 0;
+        
+        const elOutOfStock = document.getElementById('invOutOfStockCount');
+        if (elOutOfStock) elOutOfStock.innerText = data.outOfStockCount || 0;
+    } catch (err) {
+        console.error("Lỗi tải tổng quan kho:", err);
+    }
+}
+
+async function loadInventoryLogs() {
+    try {
+        const tbody = document.getElementById('inventoryLogsTableBody');
+        if (!tbody) return;
+
+        const res = await fetch('/api/inventory/logs');
+        const logs = await res.json();
+
+        if (!Array.isArray(logs) || logs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Chưa có giao dịch kho nào.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = logs.map(l => {
+            let typeBadge = '';
+            let qtyChangeText = '';
+            if (l.type === 'NHAP_KHO') {
+                typeBadge = '<span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-box-arrow-in-down me-1"></i> Nhập Kho</span>';
+                qtyChangeText = `<strong class="text-success">+${l.changeQuantity}</strong>`;
+            } else if (l.type === 'XUAT_BAN') {
+                typeBadge = '<span class="badge bg-danger-subtle text-danger border border-danger"><i class="bi bi-box-arrow-up-right me-1"></i> Xuất Bán Đơn</span>';
+                qtyChangeText = `<strong class="text-danger">${l.changeQuantity}</strong>`;
+            } else {
+                typeBadge = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning"><i class="bi bi-sliders me-1"></i> Điều Chỉnh Kiểm Kê</span>';
+                qtyChangeText = `<strong class="text-primary">${l.changeQuantity >= 0 ? '+' : ''}${l.changeQuantity}</strong>`;
+            }
+
+            return `
+                <tr>
+                    <td><code>#${l.id}</code></td>
+                    <td><small class="text-muted">${l.createdAt || ''}</small></td>
+                    <td><strong>${l.productName}</strong> <small class="text-muted">(ID: ${l.productId})</small></td>
+                    <td>${typeBadge}</td>
+                    <td class="text-center fs-6">${qtyChangeText}</td>
+                    <td class="text-center"><span class="badge bg-secondary-subtle text-secondary border">${l.stockAfter} món</span></td>
+                    <td><small class="fw-semibold text-dark">${l.supplier || 'N/A'}</small></td>
+                    <td><small class="text-muted">${l.note || ''}</small></td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error("Lỗi tải nhật ký kho:", err);
+    }
+}
+
+async function populateInventoryProductSelects() {
+    try {
+        const res = await fetch('/api/products');
+        adminProductsCache = await res.json();
+
+        const inSelect = document.getElementById('stockInProductId');
+        const adjSelect = document.getElementById('stockAdjProductId');
+
+        const optionsHtml = '<option value="">-- Chọn mặt hàng tạp hóa --</option>' + 
+            adminProductsCache.map(p => `<option value="${p.id}" data-stock="${p.stock}" data-price="${p.price}">${p.name} (Tồn: ${p.stock} ${p.unit})</option>`).join('');
+
+        if (inSelect) inSelect.innerHTML = optionsHtml;
+        if (adjSelect) adjSelect.innerHTML = optionsHtml;
+    } catch (err) {
+        console.error("Lỗi nạp danh sách sản phẩm kho:", err);
+    }
+}
+
+function openQuickStockIn(productId = null) {
+    populateInventoryProductSelects().then(() => {
+        if (productId && document.getElementById('stockInProductId')) {
+            document.getElementById('stockInProductId').value = productId;
+        }
+        const modal = new bootstrap.Modal(document.getElementById('stockInModal'));
+        modal.show();
+    });
+}
+
+function openQuickStockAdjust(productId = null) {
+    populateInventoryProductSelects().then(() => {
+        if (productId && document.getElementById('stockAdjProductId')) {
+            const select = document.getElementById('stockAdjProductId');
+            select.value = productId;
+            updateStockAdjustCurrentDisplay();
+        }
+        const modal = new bootstrap.Modal(document.getElementById('stockAdjustModal'));
+        modal.show();
+    });
+}
+
+function updateStockAdjustCurrentDisplay() {
+    const select = document.getElementById('stockAdjProductId');
+    const selectedOption = select.options[select.selectedIndex];
+    const currentStock = selectedOption ? selectedOption.getAttribute('data-stock') : 0;
+    const currentSpan = document.getElementById('stockAdjCurrentCount');
+    if (currentSpan) currentSpan.innerText = currentStock || 0;
+}
+
+async function handleStockInSubmit(event) {
+    event.preventDefault();
+    const productId = parseInt(document.getElementById('stockInProductId').value);
+    const quantity = parseInt(document.getElementById('stockInQuantity').value);
+    const importPrice = parseFloat(document.getElementById('stockInPrice').value) || 0;
+    const supplier = document.getElementById('stockInSupplier').value.trim();
+    const note = document.getElementById('stockInNote').value.trim();
+
+    if (!productId || isNaN(productId)) {
+        Swal.fire('Chú ý', 'Vui lòng chọn mặt hàng cần nhập kho!', 'warning');
+        return;
+    }
+    if (!quantity || quantity <= 0) {
+        Swal.fire('Chú ý', 'Số lượng nhập phải lớn hơn 0!', 'warning');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/inventory/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId, quantity, importPrice, supplier, note })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Nhập kho thành công!',
+                text: result.message,
+                timer: 1800,
+                showConfirmButton: false
+            });
+            bootstrap.Modal.getInstance(document.getElementById('stockInModal'))?.hide();
+            document.getElementById('stockInForm').reset();
+            loadAdminInventory();
+            loadAdminProducts();
+            loadAdminStats();
+        } else {
+            Swal.fire('Thất bại', result.message || 'Không thể tạo phiếu nhập kho!', 'error');
+        }
+    } catch (err) {
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+    }
+}
+
+async function handleStockAdjustSubmit(event) {
+    event.preventDefault();
+    const productId = parseInt(document.getElementById('stockAdjProductId').value);
+    const newStock = parseInt(document.getElementById('stockAdjNewStock').value);
+    const reason = document.getElementById('stockAdjReason').value;
+    const note = document.getElementById('stockAdjNote').value.trim();
+
+    if (!productId || isNaN(productId)) {
+        Swal.fire('Chú ý', 'Vui lòng chọn mặt hàng kiểm kê!', 'warning');
+        return;
+    }
+    if (isNaN(newStock) || newStock < 0) {
+        Swal.fire('Chú ý', 'Số lượng tồn kho thực tế phải ≥ 0!', 'warning');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/inventory/adjust', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId, newStock, reason, note })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Điều chỉnh kho thành công!',
+                text: result.message,
+                timer: 1800,
+                showConfirmButton: false
+            });
+            bootstrap.Modal.getInstance(document.getElementById('stockAdjustModal'))?.hide();
+            document.getElementById('stockAdjustForm').reset();
+            loadAdminInventory();
+            loadAdminProducts();
+            loadAdminStats();
+        } else {
+            Swal.fire('Thất bại', result.message || 'Không thể điều chỉnh tồn kho!', 'error');
+        }
+    } catch (err) {
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+    }
+}
+
+// --- QUÉT MÃ VẠCH ĐƠN HÀNG & THU NGÂN POS (BARCODE SCANNER & POS CASHIER) ---
+let currentScannedOrder = null;
+let html5QrScanner = null;
+
+function openOrderBarcodeScannerModal(initialQuery = null) {
+    const modalEl = document.getElementById('orderBarcodeScannerModal');
+    if (!modalEl) return;
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    setTimeout(() => {
+        const input = document.getElementById('barcodeScanInput');
+        if (input) {
+            input.focus();
+            if (initialQuery) {
+                input.value = initialQuery;
+                handleBarcodeLookup();
+            }
+        }
+    }, 400);
+}
+
+async function handleBarcodeLookup() {
+    const input = document.getElementById('barcodeScanInput');
+    const query = input ? input.value.trim() : '';
+
+    if (!query) {
+        Swal.fire('Chú ý', 'Vui lòng quét hoặc nhập mã vạch / mã số đơn hàng!', 'warning');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/orders?barcode=' + encodeURIComponent(query));
+        const data = await res.json();
+
+        if (data.success && data.order) {
+            displayScannedOrder(data.order);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Không tìm thấy đơn hàng!',
+                text: data.message || `Không có đơn hàng nào khớp với mã "${query}". Vui lòng kiểm tra lại.`,
+                confirmButtonText: 'Thử lại'
+            });
+            if (input) {
+                input.select();
+                input.focus();
+            }
+        }
+    } catch (err) {
+        console.error("Lỗi tra cứu mã vạch:", err);
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ web!', 'error');
+    }
+}
+
+function quickFillAndLookup(code) {
+    const input = document.getElementById('barcodeScanInput');
+    if (input) {
+        input.value = code;
+        handleBarcodeLookup();
+    }
+}
+
+function displayScannedOrder(order) {
+    currentScannedOrder = order;
+
+    // Ẩn placeholder, hiện khu vực chi tiết đơn
+    document.getElementById('scannedEmptyPlaceholder')?.classList.add('d-none');
+    document.getElementById('scannedOrderDetailsArea')?.classList.remove('d-none');
+
+    // Điền thông tin
+    document.getElementById('posOrderId').innerText = '#' + order.id;
+    document.getElementById('posOrderDate').innerText = order.orderDate || '';
+    document.getElementById('posCustName').innerText = order.customerName || 'Khách lẻ';
+    document.getElementById('posCustPhone').innerText = order.phone || 'N/A';
+    document.getElementById('posCustAddr').innerText = order.address || 'Tại cửa hàng';
+    document.getElementById('posPaymentMethod').innerText = order.paymentMethod || 'Tiền mặt';
+    document.getElementById('posBarcodeCode').innerText = "ORD-" + String(order.id).padStart(5, '0');
+
+    // Badge trạng thái
+    const badge = document.getElementById('posOrderStatusBadge');
+    if (badge) {
+        badge.innerText = order.status;
+        if (order.status === 'Đã hoàn thành' || order.status === 'Đã thanh toán') {
+            badge.className = 'badge bg-success';
+        } else if (order.status === 'Đang giao hàng') {
+            badge.className = 'badge bg-info text-dark';
+        } else {
+            badge.className = 'badge bg-warning text-dark';
+        }
+    }
+
+    // Danh sách mặt hàng
+    const tbody = document.getElementById('posOrderItemsBody');
+    if (tbody && order.items) {
+        tbody.innerHTML = order.items.map(it => `
+            <tr>
+                <td><strong>${it.productName}</strong> <small class="text-muted">(${it.unit})</small></td>
+                <td class="text-center"><span class="badge bg-light text-dark border">${it.quantity}</span></td>
+                <td class="text-end text-muted">${formatMoney(it.unitPrice)}</td>
+                <td class="text-end fw-bold text-dark">${formatMoney(it.totalPrice)}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Tổng tiền
+    document.getElementById('posTotalAmount').innerText = formatMoney(order.totalAmount);
+
+    // Reset ô tiền khách đưa
+    const cashInput = document.getElementById('posCashGivenInput');
+    if (cashInput) {
+        cashInput.value = '';
+    }
+    calculatePosChange();
+
+    // Focus vào ô tiền khách đưa để thu ngân tính tiền ngay
+    setTimeout(() => {
+        cashInput?.focus();
+    }, 200);
+}
+
+function calculatePosChange() {
+    if (!currentScannedOrder) return;
+
+    const total = currentScannedOrder.totalAmount || 0;
+    const inputVal = document.getElementById('posCashGivenInput').value;
+    const cashGiven = parseFloat(inputVal) || 0;
+
+    const changeBox = document.getElementById('posChangeBox');
+    const label = document.getElementById('posChangeLabel');
+    const amount = document.getElementById('posChangeAmount');
+    const hint = document.getElementById('posChangeHint');
+
+    if (!inputVal || inputVal.trim() === '') {
+        amount.innerText = '0 đ';
+        amount.className = 'fs-4 fw-bold text-muted';
+        label.innerText = 'Tiền thối lại khách:';
+        hint.innerText = 'Nhập số tiền khách đưa để tính tự động';
+        changeBox.style.background = '#f8f9fa';
+        return;
+    }
+
+    const diff = cashGiven - total;
+
+    if (diff >= 0) {
+        amount.innerText = formatMoney(diff);
+        amount.className = 'fs-4 fw-bold text-success';
+        label.innerText = 'Tiền thối lại khách:';
+        hint.innerText = diff === 0 ? 'Khách đưa vừa đủ, không cần thối tiền lẻ.' : `Cần gửi lại khách ${formatMoney(diff)}`;
+        changeBox.style.background = '#e8f5e9';
+    } else {
+        amount.innerText = '- ' + formatMoney(Math.abs(diff));
+        amount.className = 'fs-4 fw-bold text-danger';
+        label.innerText = 'Khách còn thiếu:';
+        hint.innerText = `Chưa đủ tiền thanh toán đơn hàng (còn thiếu ${formatMoney(Math.abs(diff))})`;
+        changeBox.style.background = '#ffebee';
+    }
+}
+
+function setCashGivenPreset(preset) {
+    if (!currentScannedOrder) return;
+    const cashInput = document.getElementById('posCashGivenInput');
+    if (!cashInput) return;
+
+    if (preset === 'exact') {
+        cashInput.value = currentScannedOrder.totalAmount;
+    } else {
+        cashInput.value = preset;
+    }
+    calculatePosChange();
+}
+
+async function completePosOrder() {
+    if (!currentScannedOrder) return;
+
+    const orderId = currentScannedOrder.id;
+
+    try {
+        const res = await fetch('/api/orders', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: orderId, status: 'Đã hoàn thành' })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Thu tiền thành công!',
+                text: `Đơn hàng #${orderId} đã được thu tiền và chuyển sang trạng thái "Đã hoàn thành".`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+            // Cập nhật giao diện hiện tại
+            currentScannedOrder.status = 'Đã hoàn thành';
+            const badge = document.getElementById('posOrderStatusBadge');
+            if (badge) {
+                badge.innerText = 'Đã hoàn thành';
+                badge.className = 'badge bg-success';
+            }
+
+            // Đồng bộ lại danh sách đơn và thống kê
+            loadAdminOrders();
+            loadAdminStats();
+            loadAdminInventory();
+        } else {
+            Swal.fire('Thất bại', 'Không thể cập nhật trạng thái đơn hàng!', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+    }
+}
+
+function printPosOrderBill() {
+    if (!currentScannedOrder) return;
+    openPrintBillModal(currentScannedOrder.id);
+}
+
+function resetPosScannerForNext() {
+    currentScannedOrder = null;
+    document.getElementById('scannedOrderDetailsArea')?.classList.add('d-none');
+    document.getElementById('scannedEmptyPlaceholder')?.classList.remove('d-none');
+
+    const input = document.getElementById('barcodeScanInput');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+}
+
+// Điều khiển Camera quét mã trực tiếp
+function toggleCameraScanner() {
+    const container = document.getElementById('cameraScannerContainer');
+    if (!container) return;
+
+    if (container.classList.contains('d-none')) {
+        startCameraScanner();
+    } else {
+        stopCameraScanner();
+    }
+}
+
+function startCameraScanner() {
+    const container = document.getElementById('cameraScannerContainer');
+    if (!container) return;
+
+    if (typeof Html5Qrcode === 'undefined') {
+        Swal.fire('Thông báo', 'Thư viện Camera chưa sẵn sàng, vui lòng nhập mã hoặc dùng máy quét USB!', 'info');
+        return;
+    }
+
+    container.classList.remove('d-none');
+
+    if (!html5QrScanner) {
+        html5QrScanner = new Html5Qrcode("interactiveScannerArea");
+    }
+
+    const config = { fps: 10, qrbox: { width: 250, height: 180 } };
+
+    html5QrScanner.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+            // Quét thành công!
+            console.log("Mã quét được từ camera:", decodedText);
+            stopCameraScanner();
+
+            const input = document.getElementById('barcodeScanInput');
+            if (input) input.value = decodedText;
+            handleBarcodeLookup();
+        },
+        (errorMessage) => {
+            // Quá trình tìm kiếm mã quét liên tục
+        }
+    ).catch(err => {
+        console.warn("Không thể mở camera:", err);
+        Swal.fire('Chú ý Camera', 'Không thể truy cập camera hoặc quyền bị từ chối. Bạn hãy dùng máy quét mã vạch hoặc nhập mã đơn.', 'warning');
+        container.classList.add('d-none');
+    });
+}
+
+function stopCameraScanner() {
+    const container = document.getElementById('cameraScannerContainer');
+    if (container) container.classList.add('d-none');
+
+    if (html5QrScanner) {
+        try {
+            html5QrScanner.stop().then(() => {
+                html5QrScanner.clear();
+            }).catch(e => console.warn(e));
+        } catch (e) {
+            console.warn(e);
+        }
     }
 }
