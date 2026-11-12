@@ -4,7 +4,7 @@ title Dang Nhap va Day Code Len GitHub - phamtoan12
 
 echo ==============================================================
 echo        DANG NHAP VA DAY CODE LEN GITHUB CHINH THUC
-echo        Repo: https://github.com/phamtoan12/wed-tap-ho-
+echo        Repo: https://github.com/phamphuctoan12-bot/wed-tap-ho-
 echo ==============================================================
 echo.
 
@@ -23,7 +23,7 @@ echo.
 cd /d "%~dp0"
 "C:\Program Files\GitHub CLI\gh.exe" auth setup-git
 git branch -M main
-git remote set-url origin https://github.com/phamtoan12/wed-tap-ho-.git
+git remote set-url origin https://github.com/phamphuctoan12-bot/wed-tap-ho-.git
 git push -u origin main
 
 echo.
@@ -31,7 +31,7 @@ if %ERRORLEVEL% EQU 0 (
     echo ==============================================================
     echo  [THANH CONG RUC RO!]
     echo  Toan bo code web da duoc day len GitHub thanh cong:
-    echo  Link xem: https://github.com/phamtoan12/wed-tap-ho-
+    echo  Link xem: https://github.com/phamphuctoan12-bot/wed-tap-ho-
     echo ==============================================================
 ) else (
     echo ==============================================================
