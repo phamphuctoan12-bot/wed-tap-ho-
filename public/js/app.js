@@ -57,11 +57,28 @@ function renderUserNavbar() {
     }
 }
 
+// Đăng nhập nhanh 1-chạm (Admin hoặc Khách hàng)
+async function quickLogin(username, password) {
+    const uInp = document.getElementById('loginUsername');
+    const pInp = document.getElementById('loginPassword');
+    if (uInp) uInp.value = username;
+    if (pInp) pInp.value = password;
+    const fakeEvent = { preventDefault: () => {} };
+    await handleLogin(fakeEvent);
+}
+
 // Xử lý Đăng Nhập
 async function handleLogin(e) {
-    e.preventDefault();
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
+    if (e && e.preventDefault) e.preventDefault();
+    const uInput = document.getElementById('loginUsername');
+    const pInput = document.getElementById('loginPassword');
+    const username = uInput ? uInput.value.trim() : '';
+    const password = pInput ? pInput.value.trim() : '';
+
+    if (!username || !password) {
+        Swal.fire('Chú ý', 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!', 'warning');
+        return;
+    }
 
     try {
         const res = await fetch('/api/auth/login', {
@@ -75,24 +92,50 @@ async function handleLogin(e) {
             currentUser = result.user;
             localStorage.setItem('taphoa_user', JSON.stringify(currentUser));
 
+            // Đóng modal chắc chắn và dọn dẹp backdrop
             const modalEl = document.getElementById('authModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                if (modal) modal.hide();
+                setTimeout(() => {
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style = '';
+                }, 300);
+            }
 
             renderUserNavbar();
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Đăng nhập thành công!',
-                text: `Chào mừng ${currentUser.fullName} đến với Tiệm Tạp Hóa!`,
-                timer: 2000
-            });
+            if (currentUser && currentUser.role === 'ADMIN') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng nhập ADMIN thành công!',
+                    html: `<b>Chào mừng ${currentUser.fullName}!</b><br>Tài khoản Quản Trị Cửa Hàng đã được xác thực.<br><br>Bạn có muốn chuyển sang <b>Trang Quản Trị (Admin Dashboard)</b> ngay bây giờ không?`,
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-shield-lock me-1"></i> Đến Trang Quản Trị',
+                    cancelButtonText: '<i class="bi bi-shop me-1"></i> Ở lại trang bán hàng'
+                }).then((r) => {
+                    if (r.isConfirmed) {
+                        window.location.href = '/admin.html';
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng nhập thành công!',
+                    text: `Chào mừng ${currentUser.fullName} đến với Tiệm Tạp Hóa!`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
         } else {
-            Swal.fire('Lỗi đăng nhập', result.message || 'Sai thông tin đăng nhập!', 'error');
+            Swal.fire('Lỗi đăng nhập', result.message || 'Sai thông tin đăng nhập! Vui lòng thử admin / admin123', 'error');
         }
     } catch (err) {
         console.error(err);
-        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+        Swal.fire('Lỗi kết nối', 'Không thể kết nối đến máy chủ! Vui lòng kiểm tra lại server.', 'error');
     }
 }
 
