@@ -55,78 +55,96 @@ public class DatabaseHelper {
         addCategory(new Category(4, "Bánh kẹo & Snack", "🍪"));
         addCategory(new Category(5, "Hóa phẩm & Đồ gia dụng", "🧼"));
 
-        // 2. Khởi tạo sản phẩm hàng tạp hóa với ảnh chụp bao bì thực tế 100%
+        // 2. Khởi tạo sản phẩm hàng tạp hóa với ảnh chụp bao bì thực tế 100% & Mã vạch EAN-13 chuẩn Việt Nam (Đầu số 893)
         addProductInternal(new Product(1, "Mì Hảo Hảo tôm chua cay 75g", 1, "Mì gói & Thực phẩm khô", "Gói", 4500, 250, "10/2027", 
             "/images/sp1_haohao.png", 
-            "Mì ăn liền quốc dân vị tôm chua cay đậm đà, sợi mì dai vàng óng ả."));
+            "Mì ăn liền quốc dân vị tôm chua cay đậm đà, sợi mì dai vàng óng ả.",
+            "8934563138164")); // Mã vạch bao bì thật của Acecook Hảo Hảo
 
         addProductInternal(new Product(2, "Mì Omachi sườn hầm ngũ quả 80g", 1, "Mì gói & Thực phẩm khô", "Gói", 8500, 120, "11/2027", 
             "/images/sp2_omachi.jpg", 
-            "Sợi mì khoai tây dai mướt kết hợp nước sốt sườn hầm ngũ quả đậm đà thơm nức."));
+            "Sợi mì khoai tây dai mướt kết hợp nước sốt sườn hầm ngũ quả đậm đà thơm nức.",
+            "8936017362305"));
 
         addProductInternal(new Product(3, "Phở bò Đệ Nhất gói 68g", 1, "Mì gói & Thực phẩm khô", "Gói", 9000, 80, "09/2027", 
             "/images/sp3_phodenhat.jpg", 
-            "Bánh phở dẻo mềm từ gạo sạch cùng gói nước cốt thịt bò hầm gia truyền."));
+            "Bánh phở dẻo mềm từ gạo sạch cùng gói nước cốt thịt bò hầm gia truyền.",
+            "8934563248160"));
 
         addProductInternal(new Product(4, "Gạo ST25 Ông Cua túi 5kg", 1, "Mì gói & Thực phẩm khô", "Túi", 185000, 45, "12/2027", 
             "/images/sp4_gaost25.jpg", 
-            "Gạo đặc sản Sóc Trăng ngon nhất thế giới, hạt thon dài trắng tinh, dẻo thơm hương dứa."));
+            "Gạo đặc sản Sóc Trăng ngon nhất thế giới, hạt thon dài trắng tinh, dẻo thơm hương dứa.",
+            "8938501234567"));
 
         addProductInternal(new Product(5, "Nước ngọt Coca-Cola lon 320ml", 2, "Nước giải khát & Sữa", "Lon", 10000, 300, "06/2027", 
             "/images/sp5_cocacola.jpg", 
-            "Nước giải khát có gas hương cola sảng khoái, đã khát tức thì cho mọi cuộc vui."));
+            "Nước giải khát có gas hương cola sảng khoái, đã khát tức thì cho mọi cuộc vui.",
+            "8935049500544"));
 
         addProductInternal(new Product(6, "Nước tăng lực Sting dâu tây đỏ 330ml", 2, "Nước giải khát & Sữa", "Chai", 11000, 180, "08/2027", 
             "/images/sp6_sting.png", 
-            "Nước tăng lực có gas vị dâu tây thơm ngon, giải nhiệt và bùng nổ năng lượng ngày dài."));
+            "Nước tăng lực có gas vị dâu tây thơm ngon, giải nhiệt và bùng nổ năng lượng ngày dài.",
+            "8934588012111"));
 
         addProductInternal(new Product(7, "Sữa tươi tiệt trùng Vinamilk 100% 1L", 2, "Nước giải khát & Sữa", "Hộp", 36000, 60, "05/2027", 
             "/images/sp7_vinamilk.png", 
-            "Sữa tươi nguyên chất tiệt trùng giàu canxi, vitamin D3 và khoáng chất dinh dưỡng."));
+            "Sữa tươi nguyên chất tiệt trùng giàu canxi, vitamin D3 và khoáng chất dinh dưỡng.",
+            "8934673123456"));
 
         addProductInternal(new Product(8, "Nước khoáng thiên nhiên Lavie 500ml", 2, "Nước giải khát & Sữa", "Chai", 6000, 200, "12/2028", 
             "/images/sp8_lavie.png", 
-            "Nước khoáng đóng chai nguồn tự nhiên tinh khiết, thanh mát mỗi ngày."));
+            "Nước khoáng đóng chai nguồn tự nhiên tinh khiết, thanh mát mỗi ngày.",
+            "8934588013002"));
 
         addProductInternal(new Product(9, "Dầu ăn đậu nành Simply chai 1L", 3, "Gia vị & Dầu ăn", "Chai", 58000, 50, "12/2027", 
             "/images/sp9_simply.jpg", 
-            "Dầu đậu nành nguyên chất 100% giàu Omega 3, 6, 9 rất tốt cho tim mạch người dùng."));
+            "Dầu đậu nành nguyên chất 100% giàu Omega 3, 6, 9 rất tốt cho tim mạch người dùng.",
+            "8934753010014"));
 
         addProductInternal(new Product(10, "Nước mắm Nam Ngư Đệ Nhị chai 900ml", 3, "Gia vị & Dầu ăn", "Chai", 26000, 75, "01/2028", 
             "/images/sp10_namngu.jpg", 
-            "Nước mắm cá cơm vị đậm đà vừa miệng, dậy mùi thơm cho món kho và nước chấm."));
+            "Nước mắm cá cơm vị đậm đà vừa miệng, dậy mùi thơm cho món kho và nước chấm.",
+            "8936017361230"));
 
         addProductInternal(new Product(11, "Hạt nêm Knorr thịt thăn xương ống 400g", 3, "Gia vị & Dầu ăn", "Gói", 34000, 90, "08/2027", 
             "/images/sp11_knorr.jpg", 
-            "Hạt nêm chiết xuất từ thịt thăn và xương hầm nhiều giờ, ngọt thanh tự nhiên cho món canh."));
+            "Hạt nêm chiết xuất từ thịt thăn và xương hầm nhiều giờ, ngọt thanh tự nhiên cho món canh.",
+            "8934868010025"));
 
         addProductInternal(new Product(12, "Nước tương Tam Thái Tử Nhất Ca 500ml", 3, "Gia vị & Dầu ăn", "Chai", 16000, 110, "10/2027", 
             "/images/sp12_tamthaitu.jpg", 
-            "Nước tương sánh đậm, thơm đậu nành, chấm món chiên xào hay ướp thịt đều ngon tròn vị."));
+            "Nước tương sánh đậm, thơm đậu nành, chấm món chiên xào hay ướp thịt đều ngon tròn vị.",
+            "8936017363456"));
 
         addProductInternal(new Product(13, "Bánh ChocoPie Orion hộp 12 cái 396g", 4, "Bánh kẹo & Snack", "Hộp", 55000, 40, "07/2027", 
             "/images/sp13_chocopie.jpg", 
-            "Bánh xốp phủ socola ngọt ngào kẹp lớp kem dẻo marshmallow dẻo dai khó cưỡng."));
+            "Bánh xốp phủ socola ngọt ngào kẹp lớp kem dẻo marshmallow dẻo dai khó cưỡng.",
+            "8936036010010"));
 
         addProductInternal(new Product(14, "Bánh quy bơ Cosy Kinh Đô 288g", 4, "Bánh kẹo & Snack", "Hộp", 42000, 60, "09/2027", 
             "/images/sp14_cosy.jpg", 
-            "Bánh quy thơm ngậy hương bơ sữa hảo hạng, giòn rụm tan ngay trong miệng."));
+            "Bánh quy thơm ngậy hương bơ sữa hảo hạng, giòn rụm tan ngay trong miệng.",
+            "8934680010023"));
 
         addProductInternal(new Product(15, "Snack khoai tây OStar vị tảo biển 90g", 4, "Bánh kẹo & Snack", "Gói", 22000, 85, "08/2027", 
             "/images/sp15_ostar.jpg", 
-            "Khoai tây tự nhiên cắt lát mỏng giòn rụm kết hợp rong biển thơm lừng hấp dẫn."));
+            "Khoai tây tự nhiên cắt lát mỏng giòn rụm kết hợp rong biển thơm lừng hấp dẫn.",
+            "8936036012021"));
 
         addProductInternal(new Product(16, "Nước giặt OMO Matic cửa trên túi 3.6kg", 5, "Hóa phẩm & Đồ gia dụng", "Túi", 175000, 30, "12/2028", 
             "/images/sp16_omo.jpg", 
-            "Công nghệ xoáy bay vết bẩn cứng đầu trong 1 lần giặt, hương hoa tươi mát thơm lâu."));
+            "Công nghệ xoáy bay vết bẩn cứng đầu trong 1 lần giặt, hương hoa tươi mát thơm lâu.",
+            "8934868030016"));
 
         addProductInternal(new Product(17, "Nước rửa chén Sunlight Chanh chai 750g", 5, "Hóa phẩm & Đồ gia dụng", "Chai", 28000, 65, "12/2028", 
             "/images/sp17_sunlight_chanh.jpg", 
-            "Đánh bay dầu mỡ nhanh chóng với chiết xuất chanh tươi thiên nhiên, khử sạch mùi tanh."));
+            "Đánh bay dầu mỡ nhanh chóng với chiết xuất chanh tươi thiên nhiên, khử sạch mùi tanh.",
+            "8934868020017"));
 
         addProductInternal(new Product(18, "Nước lau sàn Sunlight hương hoa hạ 1kg", 5, "Hóa phẩm & Đồ gia dụng", "Chai", 32000, 45, "10/2028", 
             "/images/sp18_sunlight_lau_san.jpg", 
-            "Sàn nhà sạch bóng kin kít, bảo vệ sàn và ngát hương hoa thơm mát cả ngày."));
+            "Sàn nhà sạch bóng kin kít, bảo vệ sàn và ngát hương hoa thơm mát cả ngày.",
+            "8934868040015"));
 
         // 3. Khởi tạo đơn hàng mẫu
         Order order1 = new Order();
@@ -246,6 +264,37 @@ public class DatabaseHelper {
 
     public Product getProductById(int id) {
         return products.get(id);
+    }
+
+    public Product findProductByBarcode(String code) {
+        if (code == null || code.trim().isEmpty()) return null;
+        String q = code.trim();
+
+        // 1. Khớp chính xác mã vạch EAN-13 hoặc SKU
+        for (Product p : products.values()) {
+            if (p.getBarcode() != null && p.getBarcode().equalsIgnoreCase(q)) {
+                return p;
+            }
+        }
+
+        // 2. Thử khớp theo ID số nếu người dùng quét hoặc gõ mã ngắn (ví dụ: 1, 2, "sp1")
+        String digits = q.replaceAll("[^0-9]", "");
+        if (!digits.isEmpty()) {
+            try {
+                int id = Integer.parseInt(digits);
+                Product p = products.get(id);
+                if (p != null) return p;
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // 3. Khớp một phần tên sản phẩm (ví dụ quét gõ "Hảo Hảo", "Omachi", "Coca")
+        for (Product p : products.values()) {
+            if (p.getName().toLowerCase().contains(q.toLowerCase())) {
+                return p;
+            }
+        }
+
+        return null;
     }
 
     public Product saveProduct(Product p) {

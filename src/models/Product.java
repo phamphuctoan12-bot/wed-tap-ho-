@@ -11,10 +11,15 @@ public class Product {
     private String expiryDate;    // Hạn sử dụng (HSD)
     private String image;         // Icon hoặc đường dẫn ảnh
     private String description;   // Mô tả
+    private String barcode;       // Mã vạch EAN-13 / Barcode sản phẩm
 
     public Product() {}
 
     public Product(int id, String name, int categoryId, String categoryName, String unit, double price, int stock, String expiryDate, String image, String description) {
+        this(id, name, categoryId, categoryName, unit, price, stock, expiryDate, image, description, "89300000" + String.format("%04d", id));
+    }
+
+    public Product(int id, String name, int categoryId, String categoryName, String unit, double price, int stock, String expiryDate, String image, String description, String barcode) {
         this.id = id;
         this.name = name;
         this.categoryId = categoryId;
@@ -25,6 +30,7 @@ public class Product {
         this.expiryDate = expiryDate;
         this.image = image;
         this.description = description;
+        this.barcode = barcode;
     }
 
     public int getId() { return id; }
@@ -56,4 +62,12 @@ public class Product {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getBarcode() { 
+        if (barcode == null || barcode.isEmpty()) {
+            return "89300000" + String.format("%04d", id);
+        }
+        return barcode; 
+    }
+    public void setBarcode(String barcode) { this.barcode = barcode; }
 }

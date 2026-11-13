@@ -432,6 +432,12 @@ function renderProducts(products) {
                             <span class="product-price">${formatMoney(p.price)}</span>
                             <small class="text-muted">Còn: ${p.stock}</small>
                         </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 small">
+                            <span class="text-muted font-monospace" style="font-size: 0.72rem;"><i class="bi bi-upc me-1 text-success"></i>${p.barcode || ('89300000000' + p.id)}</span>
+                            <button class="btn btn-sm btn-link p-0 text-success fw-bold text-decoration-none" style="font-size: 0.72rem;" onclick="event.stopPropagation(); showBarcodeViewerModal('${p.barcode || ('89300000000' + p.id)}', '${p.name.replace(/'/g, "\\'")}', ${p.price})" title="Xem mã vạch để quét bằng điện thoại">
+                                <i class="bi bi-upc-scan"></i> Xem mã
+                            </button>
+                        </div>
                         <div class="product-expiry">
                             <i class="bi bi-calendar-check me-1"></i>HSD: ${p.expiryDate || 'Mới sản xuất'}
                         </div>
@@ -1981,6 +1987,397 @@ function stopCameraScanner() {
         try {
             html5QrScanner.stop().then(() => {
                 html5QrScanner.clear();
+            }).catch(e => console.warn(e));
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+}
+
+// --- THU NGÂN QUÉT MÃ VẠCH SẢN PHẨM & TÍNH TIỀN THỐI (PRODUCT POS CHECKOUT) ---
+let currentPosProduct = null;
+let posCameraScanner = null;
+let posCartQty = 1;
+
+// Hiển thị modal phóng to mã vạch để dùng điện thoại quét từ màn hình
+function showBarcodeViewerModal(barcode, name, price) {
+    const elModal = document.getElementById('productBarcodeViewerModal');
+    if (!elModal) return;
+
+    document.getElementById('viewerProdName').innerText = name || 'Sản phẩm';
+    document.getElementById('viewerProdPrice').innerText = formatMoney(price || 0);
+    document.getElementById('viewerBarcodeText').innerText = barcode || '';
+
+    try {
+        if (typeof JsBarcode === 'function' && document.getElementById('viewerBarcodeSvg')) {
+            JsBarcode("#viewerBarcodeSvg", barcode, {
+                format: barcode && barcode.length === 13 ? "EAN13" : "CODE128",
+                width: 2.2,
+                height: 75,
+                displayValue: true,
+                fontSize: 16,
+                font: "monospace"
+            });
+        }
+    } catch (e) {
+        try {
+            JsBarcode("#viewerBarcodeSvg", barcode, { format: "CODE128", width: 2, height: 70, displayValue: true });
+        } catch (err2) {
+            console.warn(err2);
+        }
+    }
+
+    const modal = new bootstrap.Modal(elModal);
+    modal.show();
+}
+
+// Âm thanh BÍP siêu thị khi quét mã thành công
+function playBarcodeScannerBeep() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(1760, ctx.currentTime); // 1760Hz (nốt A6 ngân vang chuẩn máy quét siêu thị)
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.12);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.12);
+        }
+        if (navigator.vibrate) {
+            navigator.vibrate(80);
+        }
+    } catch (e) {
+        console.warn("AudioContext error:", e);
+    }
+}
+
+// Mở modal Máy Thu Ngân POS Quét Mã Sản Phẩm
+function openProductPosScannerModal(initialBarcode = null) {
+    const modalEl = document.getElementById('productPosModal');
+    if (!modalEl) return;
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    setTimeout(() => {
+        const input = document.getElementById('posProductBarcodeInput');
+        if (input) {
+            input.focus();
+            if (initialBarcode) {
+                input.value = initialBarcode;
+                lookupProductBarcode(initialBarcode);
+            }
+        }
+    }, 400);
+}
+
+// Tra cứu sản phẩm bằng mã vạch
+async function lookupProductBarcode(code = null) {
+    const input = document.getElementById('posProductBarcodeInput');
+    const barcode = (code || (input ? input.value : '')).trim();
+
+    if (!barcode) {
+        Swal.fire('Chú ý', 'Vui lòng quét hoặc nhập mã vạch sản phẩm (ví dụ: 8934563138164)!', 'warning');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/products?barcode=' + encodeURIComponent(barcode));
+        const data = await res.json();
+
+        if (data.success && data.product) {
+            playBarcodeScannerBeep();
+            displayScannedProduct(data.product);
+        } else {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Không tìm thấy sản phẩm!',
+                text: data.message || `Mã vạch "${barcode}" không khớp với mặt hàng nào trong kho.`,
+                confirmButtonText: 'Quét lại'
+            });
+            if (input) {
+                input.select();
+                input.focus();
+            }
+        }
+    } catch (err) {
+        console.error("Lỗi tìm kiếm sản phẩm theo mã vạch:", err);
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+    }
+}
+
+// Bấm nút thử nhanh sản phẩm
+function quickScanProduct(barcode) {
+    const input = document.getElementById('posProductBarcodeInput');
+    if (input) input.value = barcode;
+    lookupProductBarcode(barcode);
+}
+
+// Hiển thị sản phẩm đã quét lên bảng tính tiền
+function displayScannedProduct(p) {
+    currentPosProduct = p;
+    posCartQty = 1;
+
+    document.getElementById('posProductEmptyPlaceholder')?.classList.add('d-none');
+    document.getElementById('posProductResultArea')?.classList.remove('d-none');
+
+    document.getElementById('posCardName').innerText = p.name;
+    document.getElementById('posCardPrice').innerText = formatMoney(p.price);
+    document.getElementById('posCardUnit').innerText = p.unit;
+    document.getElementById('posCardStock').innerText = `Kho còn: ${p.stock}`;
+    document.getElementById('posCardBarcode').innerText = p.barcode || ('89300000000' + p.id);
+
+    const imgEl = document.getElementById('posCardImg');
+    if (imgEl) {
+        imgEl.src = p.image || '/images/sp1_haohao.png';
+    }
+
+    const qtyInput = document.getElementById('posItemQtyInput');
+    if (qtyInput) qtyInput.value = 1;
+
+    updatePosCalculations();
+
+    // Tự động focus vào ô tiền khách đưa
+    setTimeout(() => {
+        const cashInput = document.getElementById('posCustomerMoneyInput');
+        if (cashInput) cashInput.focus();
+    }, 250);
+}
+
+// Tăng / giảm số lượng món
+function adjustPosQty(delta) {
+    const qtyInput = document.getElementById('posItemQtyInput');
+    if (!qtyInput) return;
+    let val = parseInt(qtyInput.value) || 1;
+    val += delta;
+    if (val < 1) val = 1;
+    qtyInput.value = val;
+    updatePosCalculations();
+}
+
+// Cập nhật tính toán tổng tiền
+function updatePosCalculations() {
+    if (!currentPosProduct) return;
+
+    const qtyInput = document.getElementById('posItemQtyInput');
+    posCartQty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
+    if (posCartQty < 1) posCartQty = 1;
+
+    const total = currentPosProduct.price * posCartQty;
+
+    document.getElementById('posTotalPayable').innerText = formatMoney(total);
+    document.getElementById('posSummaryQty').innerText = `(${posCartQty} ${currentPosProduct.unit})`;
+
+    calculateCustomerChange();
+}
+
+// Tính tiền thối còn lại dư bao nhiêu
+function calculateCustomerChange() {
+    if (!currentPosProduct) return;
+
+    const total = currentPosProduct.price * posCartQty;
+    const inputVal = document.getElementById('posCustomerMoneyInput').value;
+    const cashGiven = parseFloat(inputVal) || 0;
+
+    const box = document.getElementById('posChangeResultBox');
+    const label = document.getElementById('posChangeTextLabel');
+    const amount = document.getElementById('posChangeTextAmount');
+    const hint = document.getElementById('posChangeTextHint');
+
+    if (!inputVal || inputVal.trim() === '') {
+        amount.innerText = '0 đ';
+        amount.className = 'fs-4 fw-bold text-muted';
+        label.innerText = 'Tiền thối lại khách dư:';
+        hint.innerText = 'Nhập số tiền khách đưa để tính tự động';
+        box.style.background = '#f8f9fa';
+        box.style.borderColor = '#dee2e6';
+        return;
+    }
+
+    const diff = cashGiven - total;
+
+    if (diff >= 0) {
+        amount.innerText = formatMoney(diff);
+        amount.className = 'fs-3 fw-bold text-success';
+        label.innerText = 'Tiền thối lại khách dư:';
+        hint.innerText = diff === 0 ? 'Khách đưa vừa đủ tiền, không cần thối lại.' : `Cần gửi lại cho khách ${formatMoney(diff)}`;
+        box.style.background = '#e8f5e9';
+        box.style.borderColor = '#4caf50';
+    } else {
+        amount.innerText = '- ' + formatMoney(Math.abs(diff));
+        amount.className = 'fs-3 fw-bold text-danger';
+        label.innerText = 'Khách còn thiếu:';
+        hint.innerText = `Chưa đủ tiền thanh toán (còn thiếu ${formatMoney(Math.abs(diff))})`;
+        box.style.background = '#ffebee';
+        box.style.borderColor = '#f44336';
+    }
+}
+
+// Gợi ý nhanh mệnh giá tiền
+function setCustomerMoneyPreset(preset) {
+    if (!currentPosProduct) return;
+    const input = document.getElementById('posCustomerMoneyInput');
+    if (!input) return;
+
+    const total = currentPosProduct.price * posCartQty;
+    if (preset === 'exact') {
+        input.value = total;
+    } else {
+        input.value = preset;
+    }
+    calculateCustomerChange();
+}
+
+// Xác nhận thanh toán đơn POS & Trừ tồn kho
+async function confirmPosProductCheckout() {
+    if (!currentPosProduct) return;
+
+    const total = currentPosProduct.price * posCartQty;
+    const inputVal = document.getElementById('posCustomerMoneyInput').value;
+    const cashGiven = parseFloat(inputVal) || total;
+    const change = cashGiven - total;
+
+    if (cashGiven < total) {
+        Swal.fire('Chú ý', `Số tiền khách đưa chưa đủ (còn thiếu ${formatMoney(total - cashGiven)})!`, 'warning');
+        return;
+    }
+
+    const orderData = {
+        userId: 0,
+        customerName: "Khách Mua Tại Quầy (POS)",
+        phone: "Khách lẻ",
+        address: "Thanh toán trực tiếp tại quầy",
+        note: `Bán lẻ qua máy quét mã vạch POS. Khách đưa: ${formatMoney(cashGiven)}, Tiền thối: ${formatMoney(change)}`,
+        paymentMethod: "Tiền mặt tại quầy (POS)",
+        items: [{
+            productId: currentPosProduct.id,
+            productName: currentPosProduct.name,
+            unit: currentPosProduct.unit,
+            price: currentPosProduct.price,
+            quantity: posCartQty
+        }]
+    };
+
+    try {
+        const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Thanh toán thành công!',
+                html: `
+                    <div class="text-start p-3 bg-light rounded-3 my-2 small">
+                        <div><strong>Sản phẩm:</strong> ${currentPosProduct.name} x ${posCartQty} ${currentPosProduct.unit}</div>
+                        <div><strong>Tổng tiền:</strong> <span class="text-danger fw-bold">${formatMoney(total)}</span></div>
+                        <div><strong>Tiền khách đưa:</strong> ${formatMoney(cashGiven)}</div>
+                        <div class="fs-6 mt-2 pt-2 border-top text-success fw-bold">👉 TIỀN THỐI LẠI KHÁCH DƯ: ${formatMoney(change)}</div>
+                    </div>
+                `,
+                confirmButtonText: 'Tiếp Tục Bán Món Khác'
+            }).then(() => {
+                if (typeof loadProducts === 'function') loadProducts();
+                if (typeof loadAdminOrders === 'function') loadAdminOrders();
+                if (typeof loadAdminStats === 'function') loadAdminStats();
+                if (typeof loadAdminInventory === 'function') loadAdminInventory();
+                resetForNextProductScan();
+            });
+        } else {
+            Swal.fire('Lỗi', result.message || 'Không thể tạo đơn hàng!', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Lỗi', 'Không thể kết nối máy chủ!', 'error');
+    }
+}
+
+// Reset để quét món tiếp theo
+function resetForNextProductScan() {
+    currentPosProduct = null;
+    document.getElementById('posProductResultArea')?.classList.add('d-none');
+    document.getElementById('posProductEmptyPlaceholder')?.classList.remove('d-none');
+
+    const input = document.getElementById('posProductBarcodeInput');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    const cashInput = document.getElementById('posCustomerMoneyInput');
+    if (cashInput) cashInput.value = '';
+}
+
+// Điều khiển Camera quét mã sản phẩm trên điện thoại
+function togglePosCameraScanner() {
+    const container = document.getElementById('posCameraContainer');
+    if (!container) return;
+
+    if (container.classList.contains('d-none')) {
+        startPosCameraScanner();
+    } else {
+        stopPosCameraScanner();
+    }
+}
+
+function startPosCameraScanner() {
+    const container = document.getElementById('posCameraContainer');
+    const btnText = document.getElementById('posCameraBtnText');
+    if (!container) return;
+
+    if (typeof Html5Qrcode === 'undefined') {
+        Swal.fire('Thông báo', 'Thư viện Camera chưa sẵn sàng, vui lòng nhập mã hoặc chọn nút thử nhanh!', 'info');
+        return;
+    }
+
+    container.classList.remove('d-none');
+    if (btnText) btnText.innerText = 'Tắt Camera';
+
+    if (!posCameraScanner) {
+        posCameraScanner = new Html5Qrcode("posInteractiveScanner");
+    }
+
+    const config = { fps: 12, qrbox: { width: 280, height: 180 } };
+
+    // Sử dụng facingMode: environment để ưu tiên Camera sau của điện thoại
+    posCameraScanner.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+            console.log("Quét thành công mã vạch sản phẩm:", decodedText);
+            stopPosCameraScanner();
+
+            const input = document.getElementById('posProductBarcodeInput');
+            if (input) input.value = decodedText;
+            lookupProductBarcode(decodedText);
+        },
+        (error) => {
+            // Đang quét tìm mã
+        }
+    ).catch(err => {
+        console.warn("Lỗi mở camera:", err);
+        Swal.fire('Chú ý Camera', 'Không thể mở Camera (hãy cấp quyền truy cập máy ảnh cho trình duyệt, hoặc dùng nút thử nhanh bên dưới).', 'warning');
+        stopPosCameraScanner();
+    });
+}
+
+function stopPosCameraScanner() {
+    const container = document.getElementById('posCameraContainer');
+    const btnText = document.getElementById('posCameraBtnText');
+    if (container) container.classList.add('d-none');
+    if (btnText) btnText.innerText = 'Mở Camera Quét';
+
+    if (posCameraScanner) {
+        try {
+            posCameraScanner.stop().then(() => {
+                posCameraScanner.clear();
             }).catch(e => console.warn(e));
         } catch (e) {
             console.warn(e);

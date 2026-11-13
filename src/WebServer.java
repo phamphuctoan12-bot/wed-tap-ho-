@@ -58,6 +58,17 @@ public class WebServer {
             String method = exchange.getRequestMethod().toUpperCase();
             if ("GET".equals(method)) {
                 Map<String, String> query = parseQuery(exchange.getRequestURI().getQuery());
+                if (query.containsKey("barcode") || query.containsKey("code")) {
+                    String bc = query.getOrDefault("barcode", query.get("code"));
+                    Product p = db.findProductByBarcode(bc);
+                    if (p != null) {
+                        sendJsonResponse(exchange, 200, "{\"success\":true,\"product\":" + productToJson(p) + "}");
+                    } else {
+                        sendJsonResponse(exchange, 404, "{\"success\":false,\"message\":\"Không tìm thấy sản phẩm có mã vạch: " + escapeJson(bc) + "\"}");
+                    }
+                    return;
+                }
+
                 String kw = query.getOrDefault("keyword", "");
                 int catId = 0;
                 try {
@@ -606,7 +617,7 @@ public class WebServer {
     }
 
     private static String productToJson(Product p) {
-        return String.format("{\"id\":%d,\"name\":\"%s\",\"categoryId\":%d,\"categoryName\":\"%s\",\"unit\":\"%s\",\"price\":%.0f,\"stock\":%d,\"expiryDate\":\"%s\",\"image\":\"%s\",\"description\":\"%s\"}",
+        return String.format("{\"id\":%d,\"name\":\"%s\",\"categoryId\":%d,\"categoryName\":\"%s\",\"unit\":\"%s\",\"price\":%.0f,\"stock\":%d,\"expiryDate\":\"%s\",\"image\":\"%s\",\"description\":\"%s\",\"barcode\":\"%s\"}",
                 p.getId(),
                 escapeJson(p.getName()),
                 p.getCategoryId(),
@@ -616,7 +627,8 @@ public class WebServer {
                 p.getStock(),
                 escapeJson(p.getExpiryDate()),
                 escapeJson(p.getImage()),
-                escapeJson(p.getDescription()));
+                escapeJson(p.getDescription()),
+                escapeJson(p.getBarcode()));
     }
 
     private static String orderToJson(Order o) {
@@ -683,6 +695,7 @@ public class WebServer {
         p.setExpiryDate(map.getOrDefault("expiryDate", "12/2027"));
         p.setImage(map.getOrDefault("image", "🛒"));
         p.setDescription(map.getOrDefault("description", ""));
+        p.setBarcode(map.getOrDefault("barcode", ""));
         return p;
     }
 
