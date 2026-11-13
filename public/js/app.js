@@ -1520,7 +1520,7 @@ async function loadAdminReports() {
 }
 
 // --- QUẢN LÝ KHO HÀNG & BIẾN ĐỘNG TỒN KHO (INVENTORY MANAGEMENT) ---
-let adminProductsCache = [];
+
 
 async function loadAdminInventory() {
     await Promise.all([
