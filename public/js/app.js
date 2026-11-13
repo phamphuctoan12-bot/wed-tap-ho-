@@ -2370,7 +2370,42 @@ function togglePosCameraScanner() {
     }
 }
 
-function startPosCameraScanner() {
+// Quét mã vạch từ ảnh chụp hoặc camera điện thoại (Hoạt động 100% không bị chặn bởi HTTP)
+async function handlePosImageFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    Swal.fire({
+        title: 'Đang đọc mã vạch từ ảnh...',
+        text: 'Vui lòng chờ giây lát',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        if (!posCameraScanner) {
+            posCameraScanner = new Html5Qrcode("posInteractiveScanner");
+        }
+        const decodedText = await posCameraScanner.scanFile(file, true);
+        Swal.close();
+
+        const input = document.getElementById('posProductBarcodeInput');
+        if (input) input.value = decodedText;
+        lookupProductBarcode(decodedText);
+    } catch (err) {
+        console.warn("Lỗi đọc mã từ ảnh:", err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Chưa đọc được mã vạch',
+            html: 'Ảnh chụp chưa rõ mã vạch hoặc bị mờ.<br><br>👉 Bạn có thể chụp lại gần và nét hơn, hoặc bấm nút màu đỏ <b>[ 🍜 Mì Hảo Hảo ]</b> để thử ngay!',
+            confirmButtonText: 'Đã hiểu'
+        });
+    } finally {
+        event.target.value = '';
+    }
+}
+
+async function startPosCameraScanner() {
     const container = document.getElementById('posCameraContainer');
     const btnText = document.getElementById('posCameraBtnText');
     if (!container) return;
@@ -2387,28 +2422,63 @@ function startPosCameraScanner() {
         posCameraScanner = new Html5Qrcode("posInteractiveScanner");
     }
 
-    const config = { fps: 12, qrbox: { width: 280, height: 180 } };
+    const config = { fps: 15, qrbox: { width: 280, height: 180 } };
 
-    // Sử dụng facingMode: environment để ưu tiên Camera sau của điện thoại
-    posCameraScanner.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => {
-            console.log("Quét thành công mã vạch sản phẩm:", decodedText);
+    const onScanSuccess = (decodedText) => {
+        console.log("Quét thành công mã vạch sản phẩm:", decodedText);
+        stopPosCameraScanner();
+
+        const input = document.getElementById('posProductBarcodeInput');
+        if (input) input.value = decodedText;
+        lookupProductBarcode(decodedText);
+    };
+
+    try {
+        // Thử mở Camera sau của điện thoại (environment)
+        await posCameraScanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
+    } catch (err1) {
+        console.warn("Thử mở camera sau không thành công, thử camera mặc định:", err1);
+        try {
+            // Thử camera mặc định / webcam của laptop hoặc PC
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length > 0) {
+                const cameraId = cameras[cameras.length - 1].id;
+                await posCameraScanner.start(cameraId, config, onScanSuccess, () => {});
+            } else {
+                throw new Error("Không tìm thấy camera");
+            }
+        } catch (err2) {
+            console.warn("Lỗi mở camera hoàn toàn:", err2);
             stopPosCameraScanner();
 
-            const input = document.getElementById('posProductBarcodeInput');
-            if (input) input.value = decodedText;
-            lookupProductBarcode(decodedText);
-        },
-        (error) => {
-            // Đang quét tìm mã
+            const isRemoteIp = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+            let msg = '';
+            if (isRemoteIp) {
+                msg = `<div class="text-start">
+                    <p class="mb-2 text-danger fw-bold"><i class="bi bi-shield-slash me-1"></i>Trình duyệt chặn Camera trực tiếp trên HTTP IP (<code>${window.location.hostname}</code>) vì lý do bảo mật Web.</p>
+                    <p class="mb-2"><b>3 cách giải quyết cực nhanh:</b></p>
+                    <ol class="ps-3 mb-2">
+                        <li class="mb-2"><b>Chụp ảnh quét mã:</b> Bấm nút màu xanh dương <b>[ 📸 Chụp ảnh quét ]</b> ngay bên cạnh nút Camera — điện thoại sẽ mở máy ảnh chụp gói mì và nhận mã tức thì 100%!</li>
+                        <li class="mb-2"><b>Trên máy tính:</b> Hãy mở trang web bằng: <a href="http://localhost:8080" class="fw-bold text-success">http://localhost:8080</a> (localhost luôn được phép mở webcam trực tiếp).</li>
+                        <li><b>Test nhanh tính tiền:</b> Bấm ngay nút màu đỏ <b>[ 🍜 Mì Hảo Hảo ]</b> có sẵn ở dưới để xem máy thu ngân POS tính tiền thối.</li>
+                    </ol>
+                </div>`;
+            } else {
+                msg = `<div class="text-start">
+                    <p class="mb-2">Không thể truy cập camera (trình duyệt chưa được cấp quyền hoặc không có webcam).</p>
+                    <p class="mb-1">👉 Bấm nút màu xanh dương <b>[ 📸 Chụp ảnh quét ]</b> để chọn ảnh chụp mã vạch.</p>
+                    <p class="mb-0">👉 Hoặc bấm nút <b>[ 🍜 Mì Hảo Hảo ]</b> để thử máy tính tiền thối ngay!</p>
+                </div>`;
+            }
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Hướng Dẫn Quét Mã Vạch',
+                html: msg,
+                confirmButtonText: 'Đã hiểu'
+            });
         }
-    ).catch(err => {
-        console.warn("Lỗi mở camera:", err);
-        Swal.fire('Chú ý Camera', 'Không thể mở Camera (hãy cấp quyền truy cập máy ảnh cho trình duyệt, hoặc dùng nút thử nhanh bên dưới).', 'warning');
-        stopPosCameraScanner();
-    });
+    }
 }
 
 function stopPosCameraScanner() {

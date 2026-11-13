@@ -881,13 +881,19 @@
                     <!-- Khu vực 1: Camera Scanner & Ô Nhập Mã Vạch -->
                     <div class="card border-0 shadow-sm rounded-3 mb-3">
                         <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                                 <label class="form-label fw-bold mb-0 text-dark">
-                                    <i class="bi bi-camera me-1 text-success"></i> Quét Mã Vạch Bằng Camera / Bắn Máy Quét:
+                                    <i class="bi bi-camera me-1 text-success"></i> Quét Mã Vạch Hàng Hóa:
                                 </label>
-                                <button class="btn btn-sm btn-outline-success fw-bold" id="btnTogglePosCamera" onclick="togglePosCameraScanner()">
-                                    <i class="bi bi-camera-video me-1"></i> <span id="posCameraBtnText">Mở Camera Quét</span>
-                                </button>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="btn btn-sm btn-primary fw-bold mb-0 shadow-sm" style="cursor: pointer;" title="Chụp ảnh trực tiếp từ camera điện thoại hoặc chọn file ảnh để quét mã vạch">
+                                        <i class="bi bi-camera-fill me-1"></i> Chụp ảnh quét
+                                        <input type="file" id="posImageFileInputAdmin" accept="image/*" capture="environment" class="d-none" onchange="handlePosImageFile(event)">
+                                    </label>
+                                    <button class="btn btn-sm btn-outline-success fw-bold" id="btnTogglePosCamera" onclick="togglePosCameraScanner()">
+                                        <i class="bi bi-camera-video me-1"></i> <span id="posCameraBtnText">Mở Camera Quét</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Khung Camera quét mã (HTML5-QRCode) -->
