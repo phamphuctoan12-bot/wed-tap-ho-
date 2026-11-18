@@ -62,7 +62,7 @@ public class DatabaseHelper {
     private void initSampleData() {
         // 1. Khởi tạo danh mục hàng tạp hóa
         addCategory(new Category(1, "Mì gói & Thực phẩm khô", "🍜"));
-        addCategory(new Category(2, "Nước giải khát & Sữa", "🥤"));
+        addCategory(new Category(2, "Đồ uống, Bia & Rượu", "🍺"));
         addCategory(new Category(3, "Gia vị & Dầu ăn", "🧂"));
         addCategory(new Category(4, "Bánh kẹo & Snack", "🍪"));
         addCategory(new Category(5, "Hóa phẩm & Đồ gia dụng", "🧼"));
@@ -88,22 +88,22 @@ public class DatabaseHelper {
             "Gạo đặc sản Sóc Trăng ngon nhất thế giới, hạt thon dài trắng tinh, dẻo thơm hương dứa.",
             "8938501234567"));
 
-        addProductInternal(new Product(5, "Nước ngọt Coca-Cola lon 320ml", 2, "Nước giải khát & Sữa", "Lon", 10000, 300, "06/2027", 
+        addProductInternal(new Product(5, "Nước ngọt Coca-Cola lon 320ml", 2, "Đồ uống, Bia & Rượu", "Lon", 10000, 300, "06/2027", 
             "/images/sp5_cocacola.jpg", 
             "Nước giải khát có gas hương cola sảng khoái, đã khát tức thì cho mọi cuộc vui.",
             "8935049500544"));
 
-        addProductInternal(new Product(6, "Nước tăng lực Sting dâu tây đỏ 330ml", 2, "Nước giải khát & Sữa", "Chai", 11000, 180, "08/2027", 
+        addProductInternal(new Product(6, "Nước tăng lực Sting dâu tây đỏ 330ml", 2, "Đồ uống, Bia & Rượu", "Chai", 11000, 180, "08/2027", 
             "/images/sp6_sting.png", 
             "Nước tăng lực có gas vị dâu tây thơm ngon, giải nhiệt và bùng nổ năng lượng ngày dài.",
             "8934588012111"));
 
-        addProductInternal(new Product(7, "Sữa tươi tiệt trùng Vinamilk 100% 1L", 2, "Nước giải khát & Sữa", "Hộp", 36000, 60, "05/2027", 
+        addProductInternal(new Product(7, "Sữa tươi tiệt trùng Vinamilk 100% 1L", 2, "Đồ uống, Bia & Rượu", "Hộp", 36000, 60, "05/2027", 
             "/images/sp7_vinamilk.png", 
             "Sữa tươi nguyên chất tiệt trùng giàu canxi, vitamin D3 và khoáng chất dinh dưỡng.",
             "8934673123456"));
 
-        addProductInternal(new Product(8, "Nước khoáng thiên nhiên Lavie 500ml", 2, "Nước giải khát & Sữa", "Chai", 6000, 200, "12/2028", 
+        addProductInternal(new Product(8, "Nước khoáng thiên nhiên Lavie 500ml", 2, "Đồ uống, Bia & Rượu", "Chai", 6000, 200, "12/2028", 
             "/images/sp8_lavie.png", 
             "Nước khoáng đóng chai nguồn tự nhiên tinh khiết, thanh mát mỗi ngày.",
             "8934588013002"));
@@ -157,6 +157,42 @@ public class DatabaseHelper {
             "/images/sp18_sunlight_lau_san.jpg", 
             "Sàn nhà sạch bóng kin kít, bảo vệ sàn và ngát hương hoa thơm mát cả ngày.",
             "8934868040015"));
+
+        // --- CÁC MẶT HÀNG BIA & RƯỢU MỚI (Category 2: Đồ uống, Bia & Rượu) ---
+        addProductInternal(new Product(19, "Bia Larue lon 330ml", 2, "Đồ uống, Bia & Rượu", "Lon", 12500, 240, "12/2027", 
+            "/images/sp19_larue.jpg", 
+            "Bia Larue vị êm đậm đà thơm mát, chất lượng vàng truyền thống từ năm 1909.",
+            "8934588019011"));
+
+        addProductInternal(new Product(20, "Bia Tiger Crystal lon cao 330ml", 2, "Đồ uống, Bia & Rượu", "Lon", 19500, 300, "11/2027", 
+            "/images/sp20_tiger.jpg", 
+            "Bia Tiger Crystal lọc lạnh ở -1°C tạo vị êm đằm sảng khoái tột đỉnh, hương hoa bia nồng nàn.",
+            "8934822212345"));
+
+        addProductInternal(new Product(21, "Bia Heineken Silver lon cao 330ml", 2, "Đồ uống, Bia & Rượu", "Lon", 21500, 250, "10/2027", 
+            "/images/sp21_heineken.jpg", 
+            "Bia Heineken Silver hương vị nhẹ êm dễ uống, thiết kế lon cao sang trọng chuẩn quốc tế.",
+            "8934822890123"));
+
+        addProductInternal(new Product(22, "Bia Sài Gòn Special lon 330ml", 2, "Đồ uống, Bia & Rượu", "Lon", 16500, 180, "12/2027", 
+            "/images/sp22_saigon.jpg", 
+            "Bia Sài Gòn Special nấu từ 100% lúa mạch mùa xuân, hương vị đậm đà truyền thống Việt.",
+            "8934565001234"));
+
+        addProductInternal(new Product(23, "Rượu Vang Đà Lạt Classic đỏ 750ml", 2, "Đồ uống, Bia & Rượu", "Chai", 95000, 50, "05/2030", 
+            "/images/sp23_vangdalat.jpg", 
+            "Rượu vang đỏ Đà Lạt lên men từ nho Cardinal và dâu tằm, hương vị chát dịu nồng nàn khó quên.",
+            "8935012345678"));
+
+        addProductInternal(new Product(24, "Rượu Vodka Hà Nội chai 700ml 39.5 độ", 2, "Đồ uống, Bia & Rượu", "Chai", 85000, 65, "Không thời hạn", 
+            "/images/sp24_vodka.jpg", 
+            "Vodka Hà Nội tinh khiết chưng cất từ gạo nếp cái hoa vàng qua hệ thống lọc than hoạt tính bạc.",
+            "8934678901234"));
+
+        addProductInternal(new Product(25, "Rượu Soju Jinro Chamisul chai 360ml", 2, "Đồ uống, Bia & Rượu", "Chai", 65000, 90, "Không thời hạn", 
+            "/images/sp25_soju.jpg", 
+            "Rượu Soju truyền thống Hàn Quốc lọc qua than tre tự nhiên 4 lần, vị thanh khiết êm dịu.",
+            "8801048101018"));
 
         // 3. Khởi tạo đơn hàng mẫu
         Order order1 = new Order();

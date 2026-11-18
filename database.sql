@@ -97,7 +97,7 @@ GO
 -- Danh mục
 INSERT INTO DanhMuc (TenDM, Icon) VALUES
 (N'Mì gói & Thực phẩm khô', '🍜'),
-(N'Nước giải khát & Sữa', '🥤'),
+(N'Đồ uống, Bia & Rượu', '🍺'),
 (N'Gia vị & Dầu ăn', '🧂'),
 (N'Bánh kẹo & Snack', '🍪'),
 (N'Hóa phẩm & Đồ gia dụng', '🧼');
@@ -126,7 +126,16 @@ INSERT INTO SanPham (TenSP, MaDM, DonViTinh, GiaBan, SoLuongTon, HanSuDung, Hinh
 
 (N'Nước giặt OMO Matic cửa trên túi 3.6kg', 5, N'Túi', 175000, 30, '12/2028', '🧴', N'Xoáy bay vết bẩn cứng đầu, thơm hương hoa tươi mát'),
 (N'Nước rửa chén Sunlight Chanh chai 750g', 5, N'Chai', 28000, 65, '12/2028', '🍋', N'Đánh bay dầu mỡ nhanh chóng với chiết xuất chanh tươi'),
-(N'Nước lau sàn Sunlight hương hoa hạ 1kg', 5, N'Chai', 32000, 45, '10/2028', '✨', N'Sàn nhà sạch bóng, thơm dịu ngát hương hoa');
+(N'Nước lau sàn Sunlight hương hoa hạ 1kg', 5, N'Chai', 32000, 45, '10/2028', '✨', N'Sàn nhà sạch bóng, thơm dịu ngát hương hoa'),
+
+-- Các mặt hàng Bia & Rượu mẫu
+(N'Bia Larue lon 330ml', 2, N'Lon', 12500, 240, '12/2027', '/images/sp19_larue.jpg', N'Bia Larue vị êm đậm đà thơm mát, chất lượng vàng từ 1909'),
+(N'Bia Tiger Crystal lon cao 330ml', 2, N'Lon', 19500, 300, '11/2027', '/images/sp20_tiger.jpg', N'Bia Tiger Crystal lọc lạnh ở -1°C tạo vị sảng khoái tột đỉnh'),
+(N'Bia Heineken Silver lon cao 330ml', 2, N'Lon', 21500, 250, '10/2027', '/images/sp21_heineken.jpg', N'Bia Heineken Silver hương vị nhẹ êm sang trọng chuẩn quốc tế'),
+(N'Bia Sài Gòn Special lon 330ml', 2, N'Lon', 16500, 180, '12/2027', '/images/sp22_saigon.jpg', N'Bia Sài Gòn Special 100% đại mạch hảo hạng đậm đà bản sắc Việt'),
+(N'Rượu Vang Đà Lạt Classic đỏ 750ml', 2, N'Chai', 95000, 50, '05/2030', '/images/sp23_vangdalat.jpg', N'Rượu vang đỏ Đà Lạt lên men từ nho Cardinal và quả dâu tằm'),
+(N'Rượu Vodka Hà Nội chai 700ml 39.5 độ', 2, N'Chai', 85000, 65, '12/2035', '/images/sp24_vodka.jpg', N'Vodka Hà Nội tinh khiết chưng cất từ gạo nếp qua tháp lọc bạc Halico'),
+(N'Rượu Soju Jinro Chamisul chai 360ml', 2, N'Chai', 65000, 90, '12/2035', '/images/sp25_soju.jpg', N'Rượu Soju truyền thống Hàn Quốc lọc qua than tre tự nhiên êm dịu');
 GO
 
 -- Thêm đơn hàng mẫu
