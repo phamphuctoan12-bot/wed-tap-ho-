@@ -218,10 +218,10 @@ document.addEventListener('DOMContentLoaded', () => {
 (function initFloatingButtons() {
     const floatHtml = `
     <div class="floating-contacts" id="floatingContacts">
-        <a href="https://zalo.me/0900000001" target="_blank" class="float-btn float-zalo" title="Chat Zalo với chủ tiệm">
+        <a href="https://zalo.me/0862261874" target="_blank" class="float-btn float-zalo" title="Chat Zalo với chủ tiệm">
             <svg width="22" height="22" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="#0068FF"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="16" font-weight="bold" font-family="Arial">Z</text></svg>
         </a>
-        <a href="tel:0900000001" class="float-btn float-phone" title="Gọi điện đặt hàng">
+        <a href="tel:0862261874" class="float-btn float-phone" title="Gọi điện đặt hàng: 0862.261.874">
             <i class="bi bi-telephone-fill"></i>
         </a>
         <button onclick="window.scrollTo({top:0,behavior:'smooth'})" class="float-btn float-top" id="scrollTopBtn" title="Lên đầu trang" style="display:none;">

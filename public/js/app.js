@@ -951,7 +951,7 @@ function updatePaymentQrCode() {
         if (noteEl) noteEl.innerText = note;
 
         if (imgEl) {
-            imgEl.src = `https://img.vietqr.io/image/MB-0900000001-compact2.png?amount=${total}&addInfo=${encodeURIComponent(note)}&accountName=TIEM%20TAP%20HOA`;
+            imgEl.src = `https://img.vietqr.io/image/MB-0862261874-compact2.png?amount=${total}&addInfo=${encodeURIComponent(note)}&accountName=TIEM%20TAP%20HOA`;
         }
 
         box.classList.remove('d-none');
@@ -1128,7 +1128,7 @@ function showCustomerInvoice(data) {
     if (invQrBox) {
         if (data.paymentMethod && (data.paymentMethod.includes('Chuyển khoản') || data.paymentMethod.includes('MoMo') || data.paymentMethod.includes('ZaloPay'))) {
             const note = `TAPHOA ${data.orderId || Math.floor(1000 + Math.random() * 9000)}`;
-            const qrUrl = `https://img.vietqr.io/image/MB-0900000001-compact2.png?amount=${data.total}&addInfo=${encodeURIComponent(note)}&accountName=TIEM%20TAP%20HOA`;
+            const qrUrl = `https://img.vietqr.io/image/MB-0862261874-compact2.png?amount=${data.total}&addInfo=${encodeURIComponent(note)}&accountName=TIEM%20TAP%20HOA`;
             const invImg = document.getElementById('invQrImage');
             const invAmt = document.getElementById('invQrAmount');
             const invNote = document.getElementById('invQrNote');

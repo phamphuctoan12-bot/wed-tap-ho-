@@ -87,13 +87,13 @@
             ✅ Đổi/trả trong vòng <b>24 giờ</b> kể từ khi nhận hàng<br>
             ✅ Áp dụng khi: Hàng bị lỗi, sai sản phẩm, hết hạn sử dụng<br>
             📸 Yêu cầu: Chụp ảnh sản phẩm và liên hệ tiệm qua hotline<br><br>
-            📞 Hotline: <b>0900.000.001</b><br>
+            📞 Hotline: <b>0862.261.874</b><br>
             ⏰ Hỗ trợ: 7:00 – 22:00 mỗi ngày`
         },
         {
             keys: ['liên hệ', 'hotline', 'điện thoại', 'số điện thoại', 'địa chỉ', 'cửa hàng ở đâu', 'contact'],
             answer: `📞 <b>Thông tin liên hệ Tiệm Tạp Hóa:</b><br><br>
-            📞 Hotline: <b>0900.000.001</b><br>
+            📞 Hotline / Zalo: <b>0862.261.874</b><br>
             🏠 Địa chỉ: <b>Cửa hàng Tạp Hóa</b><br>
             ⏰ Giờ mở cửa: <b>6:00 – 22:00</b> (Thứ 2 – Chủ Nhật)<br>
             🌐 Website: <b>http://taphoa.local:8080</b><br><br>
@@ -123,7 +123,7 @@
     • <span class="chat-quick" onclick="chatSend('mã giảm giá')">Mã giảm giá</span><br>
     • <span class="chat-quick" onclick="chatSend('phí giao hàng')">Phí giao hàng</span><br>
     • <span class="chat-quick" onclick="chatSend('liên hệ')">Liên hệ tiệm</span><br><br>
-    Hoặc gọi hotline: <b>📞 0900.000.001</b>`;
+    Hoặc gọi hotline: <b>📞 0862.261.874</b>`;
 
     // ============ TẠO GIAO DIỆN CHATBOT ============
     function createChatbotUI() {

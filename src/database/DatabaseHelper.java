@@ -192,7 +192,7 @@ public class DatabaseHelper {
         orders.put(2, order2);
 
         // 4. Khởi tạo tài khoản mẫu
-        users.put("phamphuctoan", new User(1, "phamphuctoan", "phamphuctoan12@", "Phạm Phúc Toàn (Chủ Tiệm)", "phamphuctoan@gmail.com", "0900000001", "Cửa hàng Tạp Hóa", "ADMIN"));
+        users.put("phamphuctoan", new User(1, "phamphuctoan", "phamphuctoan12@", "Phạm Phúc Toàn (Chủ Tiệm)", "phamphuctoan@gmail.com", "0862261874", "Cửa hàng Tạp Hóa", "ADMIN"));
         users.put("khachhang", new User(2, "khachhang", "Khach@123", "Nguyễn Văn An", "khachhang@gmail.com", "0912345678", "123 Nguyễn Huệ, Quận 1, TP.HCM", "CUSTOMER"));
         userPoints.put(2, 45); // Khách có 45 điểm
 
