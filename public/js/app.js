@@ -946,12 +946,26 @@ function updatePaymentQrCode() {
         const amtEl = document.getElementById('qrCheckoutAmount');
         const noteEl = document.getElementById('qrCheckoutNote');
         const imgEl = document.getElementById('checkoutQrImage');
+        const titleEl = document.getElementById('qrCheckoutTitle');
+        const bankEl = document.getElementById('qrCheckoutBankName');
+        const ownerEl = document.getElementById('qrCheckoutAccOwner');
+        const footerEl = document.getElementById('qrCheckoutNoteFooter');
 
         if (amtEl) amtEl.innerText = formatMoney(total);
         if (noteEl) noteEl.innerText = note;
 
-        if (imgEl) {
-            imgEl.src = `https://img.vietqr.io/image/MB-0862261874-compact2.png?amount=${total}&addInfo=${encodeURIComponent(note)}&accountName=TIEM%20TAP%20HOA`;
+        if (method.includes('MoMo')) {
+            if (imgEl) imgEl.src = '/images/momo_qr.jpg';
+            if (titleEl) titleEl.innerHTML = '<i class="bi bi-wallet2 text-danger"></i> THANH TOÁN VÍ MOMO:';
+            if (bankEl) bankEl.innerHTML = 'Kênh thanh toán: <strong class="text-danger">Ví MoMo (Chính chủ)</strong>';
+            if (ownerEl) ownerEl.innerHTML = 'Chủ tài khoản: <strong>PHAM PHUC TOAN</strong>';
+            if (footerEl) footerEl.innerHTML = '<i class="bi bi-check-circle-fill text-danger"></i> Mở App MoMo hoặc App Ngân Hàng để quét mã.';
+        } else {
+            if (imgEl) imgEl.src = `https://img.vietqr.io/image/MB-0862261874-compact2.png?amount=${total}&addInfo=${encodeURIComponent(note)}&accountName=PHAM%20PHUC%20TOAN`;
+            if (titleEl) titleEl.innerHTML = '<i class="bi bi-bank2 text-success"></i> CHUYỂN KHOẢN NGÂN HÀNG:';
+            if (bankEl) bankEl.innerHTML = 'Ngân hàng: <strong>MB Bank (Quân Đội)</strong>';
+            if (ownerEl) ownerEl.innerHTML = 'Chủ TK: <strong>PHAM PHUC TOAN</strong>';
+            if (footerEl) footerEl.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> Quét được bằng tất cả App Ngân Hàng & Ví điện tử.';
         }
 
         box.classList.remove('d-none');
@@ -1123,16 +1137,31 @@ function showCustomerInvoice(data) {
     document.getElementById('invShipping').innerText = data.shipping === 0 ? 'Miễn phí (0 đ)' : formatMoney(data.shipping);
     document.getElementById('invTotal').innerText = formatMoney(data.total);
 
-    // Hiển thị mã VietQR nếu chọn Chuyển khoản ngân hàng / Ví điện tử
+    // Hiển thị mã VietQR / MoMo nếu chọn Chuyển khoản ngân hàng / Ví điện tử
     const invQrBox = document.getElementById('invBankQrBox');
     if (invQrBox) {
         if (data.paymentMethod && (data.paymentMethod.includes('Chuyển khoản') || data.paymentMethod.includes('MoMo') || data.paymentMethod.includes('ZaloPay'))) {
             const note = `TAPHOA ${data.orderId || Math.floor(1000 + Math.random() * 9000)}`;
-            const qrUrl = `https://img.vietqr.io/image/MB-0862261874-compact2.png?amount=${data.total}&addInfo=${encodeURIComponent(note)}&accountName=TIEM%20TAP%20HOA`;
             const invImg = document.getElementById('invQrImage');
             const invAmt = document.getElementById('invQrAmount');
             const invNote = document.getElementById('invQrNote');
-            if (invImg) invImg.src = qrUrl;
+            const invBankName = document.getElementById('invQrBankName');
+            const invAccOwner = document.getElementById('invQrAccOwner');
+            const invTitle = document.getElementById('invQrTitle');
+
+            if (data.paymentMethod.includes('MoMo')) {
+                if (invImg) invImg.src = '/images/momo_qr.jpg';
+                if (invTitle) invTitle.innerHTML = '<i class="bi bi-wallet2 text-danger"></i> QUÉT MÃ MOMO ĐỂ THANH TOÁN';
+                if (invBankName) invBankName.innerHTML = 'Kênh: <strong class="text-danger">Ví điện tử MoMo</strong> - SĐT: <strong class="text-primary">0862261874</strong>';
+                if (invAccOwner) invAccOwner.innerHTML = 'Chủ tài khoản: <strong>PHAM PHUC TOAN</strong>';
+            } else {
+                const qrUrl = `https://img.vietqr.io/image/MB-0862261874-compact2.png?amount=${data.total}&addInfo=${encodeURIComponent(note)}&accountName=PHAM%20PHUC%20TOAN`;
+                if (invImg) invImg.src = qrUrl;
+                if (invTitle) invTitle.innerHTML = '<i class="bi bi-qr-code-scan text-success"></i> QUÉT MÃ VIETQR ĐỂ THANH TOÁN';
+                if (invBankName) invBankName.innerHTML = 'Ngân hàng: <strong>MB Bank (Quân Đội)</strong> - STK: <strong class="text-primary">0862261874</strong>';
+                if (invAccOwner) invAccOwner.innerHTML = 'Chủ tài khoản: <strong>PHAM PHUC TOAN</strong>';
+            }
+
             if (invAmt) invAmt.innerText = formatMoney(data.total);
             if (invNote) invNote.innerText = note;
             invQrBox.classList.remove('d-none');
