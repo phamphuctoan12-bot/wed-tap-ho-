@@ -192,7 +192,7 @@ public class DatabaseHelper {
         orders.put(2, order2);
 
         // 4. Khởi tạo tài khoản mẫu
-        users.put("admin", new User(1, "admin", "Admin@123", "Chủ Tiệm Tạp Hóa", "admin@gmail.com", "0900000001", "Cửa hàng Tạp Hóa", "ADMIN"));
+        users.put("phamphuctoan", new User(1, "phamphuctoan", "phamphuctoan12@", "Phạm Phúc Toàn (Chủ Tiệm)", "phamphuctoan@gmail.com", "0900000001", "Cửa hàng Tạp Hóa", "ADMIN"));
         users.put("khachhang", new User(2, "khachhang", "Khach@123", "Nguyễn Văn An", "khachhang@gmail.com", "0912345678", "123 Nguyễn Huệ, Quận 1, TP.HCM", "CUSTOMER"));
         userPoints.put(2, 45); // Khách có 45 điểm
 
@@ -462,12 +462,7 @@ public class DatabaseHelper {
             if (user.getPassword().equals(p)) {
                 return user;
             }
-            // Hỗ trợ thêm các trường hợp thông dụng cho admin / khachhang:
-            if ("admin".equalsIgnoreCase(user.getUsername())) {
-                if ("Admin@123".equals(p) || "admin123".equalsIgnoreCase(p) || "admin".equalsIgnoreCase(p) || "123456".equals(p)) {
-                    return user;
-                }
-            }
+            // Hỗ trợ khách hàng mẫu
             if ("khachhang".equalsIgnoreCase(user.getUsername())) {
                 if ("Khach@123".equals(p) || "123456".equals(p) || "khachhang".equalsIgnoreCase(p)) {
                     return user;
