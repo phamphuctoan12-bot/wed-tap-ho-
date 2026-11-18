@@ -169,7 +169,7 @@ public class WebServer {
             }
         });
 
-        // 3. API Đăng Nhập & Đăng Ký
+        // 3. API Đăng Nhập & Đăng Ký & Khôi Phục Mật Khẩu
         server.createContext("/api/auth/login", exchange -> {
             if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 String body = readBody(exchange);
@@ -178,12 +178,13 @@ public class WebServer {
                 String p = data.getOrDefault("password", "");
                 User user = db.loginUser(u, p);
                 if (user != null) {
-                    String userJson = String.format("{\"id\":%d,\"username\":\"%s\",\"fullName\":\"%s\",\"phone\":\"%s\",\"address\":\"%s\",\"role\":\"%s\"}",
+                    String userJson = String.format("{\"id\":%d,\"username\":\"%s\",\"fullName\":\"%s\",\"email\":\"%s\",\"phone\":\"%s\",\"address\":\"%s\",\"role\":\"%s\"}",
                             user.getId(), escapeJson(user.getUsername()), escapeJson(user.getFullName()),
+                            escapeJson(user.getEmail() != null ? user.getEmail() : ""),
                             escapeJson(user.getPhone()), escapeJson(user.getAddress()), user.getRole());
                     sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Đăng nhập thành công!\",\"user\":" + userJson + "}");
                 } else {
-                    sendJsonResponse(exchange, 401, "{\"success\":false,\"message\":\"Sai tên đăng nhập hoặc mật khẩu!\"}");
+                    sendJsonResponse(exchange, 401, "{\"success\":false,\"message\":\"Sai tên đăng nhập, email hoặc mật khẩu!\"}");
                 }
             } else {
                 sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
@@ -197,17 +198,83 @@ public class WebServer {
                 String u = data.getOrDefault("username", "");
                 String p = data.getOrDefault("password", "");
                 String fn = data.getOrDefault("fullName", "");
+                String em = data.getOrDefault("email", "");
                 String ph = data.getOrDefault("phone", "");
                 String addr = data.getOrDefault("address", "");
 
-                User newUser = db.registerUser(u, p, fn, ph, addr);
+                // Kiểm tra Email
+                if (em.isEmpty() || !em.contains("@") || !em.contains(".")) {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Vui lòng nhập địa chỉ Gmail/Email hợp lệ!\"}");
+                    return;
+                }
+
+                // Kiểm tra Mật khẩu phải có chữ, số, ký tự đặc biệt, tối thiểu 6 ký tự
+                boolean hasLetter = p.matches(".*[a-zA-Z].*");
+                boolean hasDigit = p.matches(".*[0-9].*");
+                boolean hasSpecial = p.matches(".*[^a-zA-Z0-9].*");
+                if (!hasLetter || !hasDigit || !hasSpecial || p.length() < 6) {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Mật khẩu phải từ 6 ký tự trở lên, bao gồm cả Chữ, Số và Ký tự đặc biệt (ví dụ: MatKhau@123)!\"}");
+                    return;
+                }
+
+                User newUser = db.registerUser(u, p, fn, em, ph, addr);
                 if (newUser != null) {
-                    String userJson = String.format("{\"id\":%d,\"username\":\"%s\",\"fullName\":\"%s\",\"phone\":\"%s\",\"address\":\"%s\",\"role\":\"%s\"}",
+                    String userJson = String.format("{\"id\":%d,\"username\":\"%s\",\"fullName\":\"%s\",\"email\":\"%s\",\"phone\":\"%s\",\"address\":\"%s\",\"role\":\"%s\"}",
                             newUser.getId(), escapeJson(newUser.getUsername()), escapeJson(newUser.getFullName()),
-                            escapeJson(newUser.getPhone()), escapeJson(newUser.getAddress()), newUser.getRole());
+                            escapeJson(newUser.getEmail()), escapeJson(newUser.getPhone()), escapeJson(newUser.getAddress()), newUser.getRole());
                     sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Đăng ký tài khoản thành công!\",\"user\":" + userJson + "}");
                 } else {
-                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Tên đăng nhập đã tồn tại hoặc không hợp lệ!\"}");
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Tên đăng nhập hoặc Email đã tồn tại trong hệ thống! Vui lòng chọn tên/email khác.\"}");
+                }
+            } else {
+                sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            }
+        });
+
+        // API Quên mật khẩu: Gửi mã OTP xác nhận về Gmail
+        server.createContext("/api/auth/forgot-password", exchange -> {
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readBody(exchange);
+                Map<String, String> data = parseSimpleJson(body);
+                String email = data.getOrDefault("email", "");
+                if (email.isEmpty() || !email.contains("@")) {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Vui lòng nhập địa chỉ Gmail hợp lệ!\"}");
+                    return;
+                }
+                String otp = db.createPasswordResetOtp(email);
+                if (otp != null) {
+                    sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Mã xác nhận 6 số đã được gửi về Gmail của bạn!\",\"otp\":\"" + otp + "\",\"email\":\"" + escapeJson(email) + "\"}");
+                } else {
+                    sendJsonResponse(exchange, 404, "{\"success\":false,\"message\":\"Không tìm thấy tài khoản nào gắn với Gmail này! Vui lòng kiểm tra lại.\"}");
+                }
+            } else {
+                sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            }
+        });
+
+        // API Đặt lại mật khẩu mới với mã OTP
+        server.createContext("/api/auth/reset-password", exchange -> {
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readBody(exchange);
+                Map<String, String> data = parseSimpleJson(body);
+                String email = data.getOrDefault("email", "");
+                String otp = data.getOrDefault("otp", "");
+                String newPassword = data.getOrDefault("newPassword", "");
+
+                // Kiểm tra Mật khẩu mới có chữ, số, ký tự đặc biệt
+                boolean hasLetter = newPassword.matches(".*[a-zA-Z].*");
+                boolean hasDigit = newPassword.matches(".*[0-9].*");
+                boolean hasSpecial = newPassword.matches(".*[^a-zA-Z0-9].*");
+                if (!hasLetter || !hasDigit || !hasSpecial || newPassword.length() < 6) {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Mật khẩu mới phải từ 6 ký tự, gồm cả Chữ, Số và Ký tự đặc biệt (ví dụ: MatKhau@123)!\"}");
+                    return;
+                }
+
+                boolean ok = db.resetPasswordWithOtp(email, otp, newPassword);
+                if (ok) {
+                    sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Đổi mật khẩu thành công! Bạn có thể dùng mật khẩu mới để đăng nhập ngay.\"}");
+                } else {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Mã OTP không chính xác hoặc đã hết hạn (15 phút)! Vui lòng thử lại.\"}");
                 }
             } else {
                 sendJsonResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");

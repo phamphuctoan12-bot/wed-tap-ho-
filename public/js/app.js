@@ -67,6 +67,219 @@ async function quickLogin(username, password) {
     await handleLogin(fakeEvent);
 }
 
+// Kiểm tra mật khẩu trực quan theo thời gian thực (Form Đăng Ký)
+function checkPasswordStrength(pwd) {
+    const hasLen = pwd.length >= 6;
+    const hasLet = /[a-zA-Z]/.test(pwd);
+    const hasDig = /[0-9]/.test(pwd);
+    const hasSpc = /[^a-zA-Z0-9]/.test(pwd);
+
+    const updateBadge = (id, ok) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const label = el.getAttribute('data-label') || '';
+        if (ok) {
+            el.className = 'badge bg-success';
+            el.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>${label}`;
+        } else {
+            el.className = 'badge bg-secondary';
+            el.innerHTML = `<i class="bi bi-circle me-1"></i>${label}`;
+        }
+    };
+    updateBadge('chkLength', hasLen);
+    updateBadge('chkLetter', hasLet);
+    updateBadge('chkNumber', hasDig);
+    updateBadge('chkSpecial', hasSpc);
+}
+
+// Kiểm tra mật khẩu (Form Quên Mật Khẩu)
+function checkForgotPassStrength(pwd) {
+    const hasLen = pwd.length >= 6;
+    const hasLet = /[a-zA-Z]/.test(pwd);
+    const hasDig = /[0-9]/.test(pwd);
+    const hasSpc = /[^a-zA-Z0-9]/.test(pwd);
+
+    const updateBadge = (id, ok) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const label = el.getAttribute('data-label') || '';
+        if (ok) {
+            el.className = 'badge bg-success';
+            el.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>${label}`;
+        } else {
+            el.className = 'badge bg-secondary';
+            el.innerHTML = `<i class="bi bi-circle me-1"></i>${label}`;
+        }
+    };
+    updateBadge('fChkLength', hasLen);
+    updateBadge('fChkLetter', hasLet);
+    updateBadge('fChkNumber', hasDig);
+    updateBadge('fChkSpecial', hasSpc);
+}
+
+// Chuyển sang màn hình Quên Mật Khẩu
+function openForgotPasswordPane() {
+    document.querySelectorAll('#authTabs .nav-link').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('#authTabsContent .tab-pane').forEach(pane => {
+        pane.classList.remove('show', 'active');
+    });
+    const forgotPane = document.getElementById('forgotPane');
+    if (forgotPane) forgotPane.classList.add('show', 'active');
+    resetForgotForm();
+}
+
+// Quay lại màn hình Đăng Nhập
+function showLoginTab() {
+    document.querySelectorAll('#authTabsContent .tab-pane').forEach(pane => {
+        pane.classList.remove('show', 'active');
+    });
+    const loginPane = document.getElementById('loginPane');
+    if (loginPane) loginPane.classList.add('show', 'active');
+
+    document.querySelectorAll('#authTabs .nav-link').forEach(btn => btn.classList.remove('active'));
+    const tabLogin = document.getElementById('tab-login');
+    if (tabLogin) tabLogin.classList.add('active');
+}
+
+// Reset form quên mật khẩu về Bước 1
+function resetForgotForm() {
+    const step1 = document.getElementById('forgotStep1');
+    const step2 = document.getElementById('forgotStep2');
+    if (step1) step1.classList.remove('d-none');
+    if (step2) step2.classList.add('d-none');
+    const otpInp = document.getElementById('forgotOtp');
+    const newPass = document.getElementById('forgotNewPassword');
+    const confPass = document.getElementById('forgotConfirmPassword');
+    if (otpInp) otpInp.value = '';
+    if (newPass) newPass.value = '';
+    if (confPass) confPass.value = '';
+}
+
+// Xử lý gửi mã OTP khôi phục về Gmail
+async function handleSendResetOtp(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const emailInput = document.getElementById('forgotEmail');
+    const email = emailInput ? emailInput.value.trim() : '';
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        Swal.fire('Email không hợp lệ', 'Vui lòng nhập đúng định dạng Gmail (ví dụ: yourname@gmail.com)!', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btnSendOtp');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang gửi mã...';
+    }
+
+    try {
+        const res = await fetch('/api/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            document.getElementById('forgotSentEmailText').innerText = email;
+            document.getElementById('forgotStep1').classList.add('d-none');
+            document.getElementById('forgotStep2').classList.remove('d-none');
+
+            // Tự động điền mã OTP vào ô nếu có phản hồi để trải nghiệm mượt mà
+            if (result.otp) {
+                const otpInp = document.getElementById('forgotOtp');
+                if (otpInp) otpInp.value = result.otp;
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '📧 Đã gửi mã về Gmail!',
+                html: `Hệ thống đã gửi mã xác nhận 6 số đến: <b>${email}</b><br><br>` +
+                      `<div class="alert alert-info py-2 mb-0 font-monospace">Mã OTP của bạn: <b class="fs-5 text-danger">${result.otp || '123456'}</b></div>` +
+                      `<small class="text-muted mt-2 d-block">Mã xác nhận có hiệu lực trong 15 phút.</small>`,
+                confirmButtonColor: '#198754'
+            });
+        } else {
+            Swal.fire('Không tìm thấy tài khoản', result.message || 'Không có tài khoản nào đăng ký với Gmail này!', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Gửi Mã Xác Nhận Về Gmail';
+        }
+    }
+}
+
+// Xử lý xác nhận đổi mật khẩu mới
+async function handleResetPassword(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const email = document.getElementById('forgotEmail') ? document.getElementById('forgotEmail').value.trim() : '';
+    const otp = document.getElementById('forgotOtp') ? document.getElementById('forgotOtp').value.trim() : '';
+    const newPassword = document.getElementById('forgotNewPassword') ? document.getElementById('forgotNewPassword').value.trim() : '';
+    const confirmPassword = document.getElementById('forgotConfirmPassword') ? document.getElementById('forgotConfirmPassword').value.trim() : '';
+
+    if (!otp || otp.length < 6) {
+        Swal.fire('Chú ý', 'Vui lòng nhập đầy đủ mã OTP 6 chữ số!', 'warning');
+        return;
+    }
+
+    // Kiểm tra mật khẩu có chữ, số, ký tự đặc biệt
+    const hasLen = newPassword.length >= 6;
+    const hasLet = /[a-zA-Z]/.test(newPassword);
+    const hasDig = /[0-9]/.test(newPassword);
+    const hasSpc = /[^a-zA-Z0-9]/.test(newPassword);
+
+    if (!hasLen || !hasLet || !hasDig || !hasSpc) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Mật khẩu mới chưa đủ mạnh!',
+            html: 'Mật khẩu phải từ <b>6 ký tự trở lên</b> và chứa đầy đủ:<br>' +
+                  '• <b>Chữ cái</b> (a-z, A-Z)<br>' +
+                  '• <b>Chữ số</b> (0-9)<br>' +
+                  '• <b>Ký tự đặc biệt</b> (@, #, $, !, %, *, ?, &, ...)<br><br>' +
+                  '<i>Ví dụ gợi ý: MatKhau@123</i>'
+        });
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        Swal.fire('Lỗi xác nhận', 'Mật khẩu mới và mật khẩu nhập lại không khớp nhau!', 'warning');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp, newPassword })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '🎉 Đổi mật khẩu thành công!',
+                text: 'Bạn có thể đăng nhập ngay với mật khẩu mới vừa đặt.',
+                confirmButtonColor: '#198754'
+            }).then(() => {
+                showLoginTab();
+                const loginUserInp = document.getElementById('loginUsername');
+                const loginPassInp = document.getElementById('loginPassword');
+                if (loginUserInp) loginUserInp.value = email;
+                if (loginPassInp) loginPassInp.value = newPassword;
+            });
+        } else {
+            Swal.fire('Lỗi đổi mật khẩu', result.message || 'Mã OTP không đúng hoặc đã hết hạn!', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+    }
+}
+
 // Xử lý Đăng Nhập
 async function handleLogin(e) {
     if (e && e.preventDefault) e.preventDefault();
@@ -76,7 +289,7 @@ async function handleLogin(e) {
     const password = pInput ? pInput.value.trim() : '';
 
     if (!username || !password) {
-        Swal.fire('Chú ý', 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!', 'warning');
+        Swal.fire('Chú ý', 'Vui lòng nhập tên đăng nhập (hoặc Gmail) và mật khẩu!', 'warning');
         return;
     }
 
@@ -131,7 +344,7 @@ async function handleLogin(e) {
                 });
             }
         } else {
-            Swal.fire('Lỗi đăng nhập', result.message || 'Sai thông tin đăng nhập! Vui lòng thử admin / admin123', 'error');
+            Swal.fire('Lỗi đăng nhập', result.message || 'Sai tên đăng nhập/email hoặc mật khẩu!', 'error');
         }
     } catch (err) {
         console.error(err);
@@ -143,16 +356,43 @@ async function handleLogin(e) {
 async function handleRegister(e) {
     e.preventDefault();
     const fullName = document.getElementById('regFullName').value.trim();
+    const email = document.getElementById('regEmail') ? document.getElementById('regEmail').value.trim() : '';
     const username = document.getElementById('regUsername').value.trim();
     const password = document.getElementById('regPassword').value.trim();
     const phone = document.getElementById('regPhone').value.trim();
     const address = document.getElementById('regAddress').value.trim();
 
+    // 1. Kiểm tra Email
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        Swal.fire('Email không hợp lệ', 'Vui lòng nhập đúng định dạng Gmail (ví dụ: yourname@gmail.com)!', 'warning');
+        return;
+    }
+
+    // 2. Kiểm tra Mật khẩu bắt buộc: Chữ + Số + Ký tự đặc biệt, tối thiểu 6 ký tự
+    const hasLen = password.length >= 6;
+    const hasLet = /[a-zA-Z]/.test(password);
+    const hasDig = /[0-9]/.test(password);
+    const hasSpc = /[^a-zA-Z0-9]/.test(password);
+
+    if (!hasLen || !hasLet || !hasDig || !hasSpc) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Mật khẩu chưa đủ điều kiện bảo mật!',
+            html: 'Để đảm bảo an toàn cho tài khoản, mật khẩu bắt buộc phải gồm:<br>' +
+                  '• <b>Tối thiểu 6 ký tự</b><br>' +
+                  '• <b>Chữ cái</b> (a-z, A-Z)<br>' +
+                  '• <b>Chữ số</b> (0-9)<br>' +
+                  '• <b>Ký tự đặc biệt</b> (@, #, $, !, %, *, ?, &, ...)<br><br>' +
+                  '<i>Ví dụ hợp lệ: MatKhau@123, Nam@2026</i>'
+        });
+        return;
+    }
+
     try {
         const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fullName, username, password, phone, address })
+            body: JSON.stringify({ fullName, username, password, email, phone, address })
         });
         const result = await res.json();
 
@@ -161,16 +401,23 @@ async function handleRegister(e) {
             localStorage.setItem('taphoa_user', JSON.stringify(currentUser));
 
             const modalEl = document.getElementById('authModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                if (modal) modal.hide();
+                setTimeout(() => {
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style = '';
+                }, 300);
+            }
 
             renderUserNavbar();
 
             Swal.fire({
                 icon: 'success',
                 title: '🎉 Đăng ký thành công!',
-                text: `Chào mừng ${currentUser.fullName} đã trở thành thành viên Tiệm Tạp Hóa!`,
-                timer: 2000
+                html: `Chào mừng <b>${currentUser.fullName}</b> đã trở thành thành viên!<br>Email đăng ký: <b>${currentUser.email || email}</b>`,
+                timer: 3000
             });
         } else {
             Swal.fire('Lỗi đăng ký', result.message || 'Không thể tạo tài khoản!', 'error');

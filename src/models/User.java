@@ -5,20 +5,27 @@ public class User {
     private String username;
     private String password;
     private String fullName;
+    private String email;
     private String phone;
     private String address;
     private String role; // "ADMIN" hoặc "CUSTOMER"
 
     public User() {}
 
-    public User(int id, String username, String password, String fullName, String phone, String address, String role) {
+    public User(int id, String username, String password, String fullName, String email, String phone, String address, String role) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.fullName = fullName;
+        this.email = email;
         this.phone = phone;
         this.address = address;
         this.role = role;
+    }
+
+    // Tương thích ngược với code cũ nếu chưa truyền email
+    public User(int id, String username, String password, String fullName, String phone, String address, String role) {
+        this(id, username, password, fullName, username + "@gmail.com", phone, address, role);
     }
 
     public int getId() { return id; }
@@ -32,6 +39,9 @@ public class User {
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }

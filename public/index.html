@@ -349,7 +349,7 @@
     <!-- Modal Đăng Nhập & Đăng Ký -->
     <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content">
+            <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title fw-bold" id="authModalTitle">
                         <i class="bi bi-person-lock me-2"></i> Tài Khoản Khách Hàng
@@ -376,14 +376,19 @@
                         <div class="tab-pane fade show active" id="loginPane">
                             <form id="loginForm" onsubmit="handleLogin(event)">
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Tên đăng nhập</label>
+                                    <label class="form-label small fw-bold">Tên đăng nhập hoặc Gmail</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                        <input type="text" id="loginUsername" class="form-control" required placeholder="Nhập tên đăng nhập...">
+                                        <input type="text" id="loginUsername" class="form-control" required placeholder="Nhập tên đăng nhập hoặc Gmail...">
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Mật khẩu</label>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label small fw-bold mb-0">Mật khẩu</label>
+                                        <a href="javascript:void(0)" onclick="openForgotPasswordPane()" class="text-success small fw-bold text-decoration-none">
+                                            <i class="bi bi-question-circle"></i> Quên mật khẩu?
+                                        </a>
+                                    </div>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-key"></i></span>
                                         <input type="password" id="loginPassword" class="form-control" required placeholder="Nhập mật khẩu...">
@@ -395,18 +400,18 @@
                                         <i class="bi bi-key-fill text-warning me-1"></i> Bấm để Đăng Nhập Nhanh 1-Chạm:
                                     </div>
                                     <div class="d-flex flex-column gap-2 mt-2">
-                                        <button type="button" class="btn btn-sm btn-outline-danger fw-bold text-start d-flex justify-content-between align-items-center" onclick="quickLogin('admin', 'admin123')">
+                                        <button type="button" class="btn btn-sm btn-outline-danger fw-bold text-start d-flex justify-content-between align-items-center" onclick="quickLogin('admin', 'Admin@123')">
                                             <span><i class="bi bi-shield-lock-fill me-1"></i> Đăng nhập ADMIN (Chủ tiệm)</span>
-                                            <span class="badge bg-danger">admin / admin123</span>
+                                            <span class="badge bg-danger">admin / Admin@123</span>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-success fw-bold text-start d-flex justify-content-between align-items-center" onclick="quickLogin('khachhang', '123456')">
+                                        <button type="button" class="btn btn-sm btn-outline-success fw-bold text-start d-flex justify-content-between align-items-center" onclick="quickLogin('khachhang', 'Khach@123')">
                                             <span><i class="bi bi-person-fill me-1"></i> Đăng nhập KHÁCH HÀNG</span>
-                                            <span class="badge bg-success">khachhang / 123456</span>
+                                            <span class="badge bg-success">khachhang / Khach@123</span>
                                         </button>
                                     </div>
                                 </div>
 
-                                <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+                                <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm">
                                     <i class="bi bi-check2-circle me-1"></i> Đăng Nhập Ngay
                                 </button>
                             </form>
@@ -419,30 +424,122 @@
                                     <label class="form-label small fw-bold">Họ và tên của bạn <span class="text-danger">*</span></label>
                                     <input type="text" id="regFullName" class="form-control" required placeholder="Ví dụ: Trần Văn Nam">
                                 </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Địa chỉ Gmail <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-envelope-at text-danger"></i></span>
+                                        <input type="email" id="regEmail" class="form-control" required placeholder="ví dụ: namtran@gmail.com">
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.72rem;">Dùng để lấy lại mật khẩu khi bạn quên.</small>
+                                </div>
+
                                 <div class="row g-2 mb-2">
                                     <div class="col-md-6">
                                         <label class="form-label small fw-bold">Tên đăng nhập <span class="text-danger">*</span></label>
-                                        <input type="text" id="regUsername" class="form-control" required placeholder="viết liền không dấu">
+                                        <input type="text" id="regUsername" class="form-control" required placeholder="viết liền, không dấu">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold">Mật khẩu <span class="text-danger">*</span></label>
-                                        <input type="password" id="regPassword" class="form-control" required placeholder="Tối thiểu 4 ký tự">
-                                    </div>
-                                </div>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-md-5">
                                         <label class="form-label small fw-bold">Số điện thoại</label>
                                         <input type="tel" id="regPhone" class="form-control" placeholder="0912...">
                                     </div>
-                                    <div class="col-md-7">
-                                        <label class="form-label small fw-bold">Địa chỉ nhận hàng</label>
-                                        <input type="text" id="regAddress" class="form-control" placeholder="Số nhà, đường, phường...">
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Mật khẩu bảo mật <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-shield-lock text-success"></i></span>
+                                        <input type="password" id="regPassword" class="form-control" required placeholder="Chữ, số và ký tự đặc biệt..." oninput="checkPasswordStrength(this.value)">
+                                    </div>
+                                    <!-- Tiêu chí mật khẩu trực quan -->
+                                    <div class="d-flex flex-wrap gap-1 mt-1" style="font-size: 0.72rem;">
+                                        <span id="chkLength" class="badge bg-secondary" data-label="Từ 6 ký tự"><i class="bi bi-circle me-1"></i>Từ 6 ký tự</span>
+                                        <span id="chkLetter" class="badge bg-secondary" data-label="Có chữ cái"><i class="bi bi-circle me-1"></i>Có chữ cái</span>
+                                        <span id="chkNumber" class="badge bg-secondary" data-label="Có chữ số"><i class="bi bi-circle me-1"></i>Có chữ số</span>
+                                        <span id="chkSpecial" class="badge bg-secondary" data-label="Ký tự đặc biệt (@,#,$,!...)"><i class="bi bi-circle me-1"></i>Ký tự đặc biệt (@,#,$,!...)</span>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Địa chỉ nhận hàng</label>
+                                    <input type="text" id="regAddress" class="form-control" placeholder="Số nhà, đường, phường/xã...">
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
                                     <i class="bi bi-person-check me-1"></i> Đăng Ký Tài Khoản
                                 </button>
                             </form>
+                        </div>
+
+                        <!-- TAB QUÊN MẬT KHẨU (GỬI MAIL) -->
+                        <div class="tab-pane fade" id="forgotPane">
+                            <div class="alert alert-success border-0 py-2 small mb-3">
+                                <i class="bi bi-shield-lock-fill me-1"></i> <b>Lấy lại mật khẩu qua Gmail:</b> Hệ thống sẽ gửi mã xác thực OTP 6 số đến hộp thư Gmail của bạn.
+                            </div>
+
+                            <!-- BƯỚC 1: Nhập Gmail -->
+                            <div id="forgotStep1">
+                                <form onsubmit="handleSendResetOtp(event)">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Địa chỉ Gmail đã đăng ký <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-envelope-at text-danger"></i></span>
+                                            <input type="email" id="forgotEmail" class="form-control" required placeholder="Nhập Gmail của bạn...">
+                                        </div>
+                                    </div>
+                                    <button type="submit" id="btnSendOtp" class="btn btn-danger w-100 fw-bold py-2 shadow-sm">
+                                        <i class="bi bi-send-fill me-1"></i> Gửi Mã Xác Nhận Về Gmail
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- BƯỚC 2: Nhập OTP & Mật khẩu mới -->
+                            <div id="forgotStep2" class="d-none">
+                                <div class="alert alert-warning border small py-2 mb-3">
+                                    <i class="bi bi-envelope-check me-1"></i> Mã xác thực đã gửi tới: <b id="forgotSentEmailText"></b>
+                                </div>
+                                <form onsubmit="handleResetPassword(event)">
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Mã xác thực OTP (6 chữ số) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-123 text-primary"></i></span>
+                                            <input type="text" id="forgotOtp" class="form-control font-monospace fw-bold text-center" maxlength="6" required placeholder="123456" style="letter-spacing: 4px; font-size: 1.15rem;">
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Mật khẩu mới <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-key-fill text-success"></i></span>
+                                            <input type="password" id="forgotNewPassword" class="form-control" required placeholder="Chữ, số và ký tự đặc biệt..." oninput="checkForgotPassStrength(this.value)">
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-1 mt-1" style="font-size: 0.72rem;">
+                                            <span id="fChkLength" class="badge bg-secondary" data-label="Từ 6 ký tự"><i class="bi bi-circle me-1"></i>Từ 6 ký tự</span>
+                                            <span id="fChkLetter" class="badge bg-secondary" data-label="Có chữ cái"><i class="bi bi-circle me-1"></i>Có chữ cái</span>
+                                            <span id="fChkNumber" class="badge bg-secondary" data-label="Có chữ số"><i class="bi bi-circle me-1"></i>Có chữ số</span>
+                                            <span id="fChkSpecial" class="badge bg-secondary" data-label="Ký tự đặc biệt"><i class="bi bi-circle me-1"></i>Ký tự đặc biệt</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Xác nhận lại mật khẩu mới <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-check2-circle"></i></span>
+                                            <input type="password" id="forgotConfirmPassword" class="form-control" required placeholder="Nhập lại mật khẩu mới...">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm mb-2">
+                                        <i class="bi bi-shield-check me-1"></i> Xác Nhận Đổi Mật Khẩu
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetForgotForm()">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Gửi lại mã khác
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="text-center mt-3 pt-2 border-top">
+                                <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted" onclick="showLoginTab()">
+                                    <i class="bi bi-arrow-left me-1"></i> Quay lại trang Đăng Nhập
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

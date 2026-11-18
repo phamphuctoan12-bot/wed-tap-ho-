@@ -28,6 +28,18 @@ public class DatabaseHelper {
     private final List<Review> reviews = Collections.synchronizedList(new ArrayList<>());
     private final Map<Integer, Integer> userPoints = new ConcurrentHashMap<>();
     private final List<InventoryLog> inventoryLogs = Collections.synchronizedList(new ArrayList<>());
+    private final Map<String, ResetToken> resetTokens = new ConcurrentHashMap<>();
+
+    public static class ResetToken {
+        public String email;
+        public String otp;
+        public long expiresAt;
+        public ResetToken(String email, String otp, long expiresAt) {
+            this.email = email;
+            this.otp = otp;
+            this.expiresAt = expiresAt;
+        }
+    }
 
     private final AtomicInteger productIdGen = new AtomicInteger(100);
     private final AtomicInteger orderIdGen = new AtomicInteger(10);
@@ -180,8 +192,8 @@ public class DatabaseHelper {
         orders.put(2, order2);
 
         // 4. Khởi tạo tài khoản mẫu
-        users.put("admin", new User(1, "admin", "admin123", "Chủ Tiệm Tạp Hóa", "0900000001", "Cửa hàng Tạp Hóa", "ADMIN"));
-        users.put("khachhang", new User(2, "khachhang", "123456", "Nguyễn Văn An", "0912345678", "123 Nguyễn Huệ, Quận 1, TP.HCM", "CUSTOMER"));
+        users.put("admin", new User(1, "admin", "Admin@123", "Chủ Tiệm Tạp Hóa", "admin@gmail.com", "0900000001", "Cửa hàng Tạp Hóa", "ADMIN"));
+        users.put("khachhang", new User(2, "khachhang", "Khach@123", "Nguyễn Văn An", "khachhang@gmail.com", "0912345678", "123 Nguyễn Huệ, Quận 1, TP.HCM", "CUSTOMER"));
         userPoints.put(2, 45); // Khách có 45 điểm
 
         // 5. Khởi tạo mã giảm giá (Vouchers)
@@ -407,7 +419,7 @@ public class DatabaseHelper {
     }
 
     // --- QUẢN LÝ NGƯỜI DÙNG & XÁC THỰC ---
-    public User registerUser(String username, String password, String fullName, String phone, String address) {
+    public User registerUser(String username, String password, String fullName, String email, String phone, String address) {
         if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
             return null;
         }
@@ -415,30 +427,102 @@ public class DatabaseHelper {
         if (users.containsKey(u)) {
             return null; // Tên đăng nhập đã tồn tại
         }
+        String em = (email != null && !email.trim().isEmpty()) ? email.trim().toLowerCase() : (u + "@gmail.com");
+        // Kiểm tra trùng email
+        for (User existing : users.values()) {
+            if (existing.getEmail() != null && existing.getEmail().equalsIgnoreCase(em)) {
+                return null; // Email đã tồn tại
+            }
+        }
         int id = userIdGen.incrementAndGet();
-        User newUser = new User(id, u, password.trim(), fullName, phone, address, "CUSTOMER");
+        User newUser = new User(id, u, password.trim(), fullName, em, phone, address, "CUSTOMER");
         users.put(u, newUser);
         return newUser;
     }
 
-    public User loginUser(String username, String password) {
-        if (username == null || password == null) return null;
-        String u = username.trim().toLowerCase();
+    public User registerUser(String username, String password, String fullName, String phone, String address) {
+        return registerUser(username, password, fullName, username + "@gmail.com", phone, address);
+    }
+
+    public User loginUser(String identifier, String password) {
+        if (identifier == null || password == null) return null;
+        String idStr = identifier.trim().toLowerCase();
         String p = password.trim();
-        User user = users.get(u);
+
+        // Tìm theo username HOẶC email
+        User user = null;
+        for (User u : users.values()) {
+            if (u.getUsername().equalsIgnoreCase(idStr) || (u.getEmail() != null && u.getEmail().equalsIgnoreCase(idStr))) {
+                user = u;
+                break;
+            }
+        }
+
         if (user != null) {
             if (user.getPassword().equals(p)) {
                 return user;
             }
-            // Hỗ trợ thêm các trường hợp người dùng gõ mật khẩu thông dụng:
-            if ("admin".equals(u) && ("admin".equalsIgnoreCase(p) || "admin123".equalsIgnoreCase(p) || "123456".equals(p) || "123".equals(p))) {
-                return user;
+            // Hỗ trợ thêm các trường hợp thông dụng cho admin / khachhang:
+            if ("admin".equalsIgnoreCase(user.getUsername())) {
+                if ("Admin@123".equals(p) || "admin123".equalsIgnoreCase(p) || "admin".equalsIgnoreCase(p) || "123456".equals(p)) {
+                    return user;
+                }
             }
-            if ("khachhang".equals(u) && ("khachhang".equalsIgnoreCase(p) || "123456".equals(p) || "123".equals(p))) {
-                return user;
+            if ("khachhang".equalsIgnoreCase(user.getUsername())) {
+                if ("Khach@123".equals(p) || "123456".equals(p) || "khachhang".equalsIgnoreCase(p)) {
+                    return user;
+                }
             }
         }
         return null;
+    }
+
+    public User getUserByEmail(String email) {
+        if (email == null) return null;
+        String em = email.trim().toLowerCase();
+        for (User u : users.values()) {
+            if (u.getEmail() != null && u.getEmail().equalsIgnoreCase(em)) {
+                return u;
+            }
+        }
+        return null;
+    }
+
+    public synchronized String createPasswordResetOtp(String email) {
+        User u = getUserByEmail(email);
+        if (u == null) return null;
+
+        // Tạo mã OTP ngẫu nhiên 6 chữ số
+        int rand = 100000 + (int)(Math.random() * 900000);
+        String otp = String.valueOf(rand);
+        long expiresAt = System.currentTimeMillis() + (15 * 60 * 1000); // Có hiệu lực 15 phút
+        resetTokens.put(email.trim().toLowerCase(), new ResetToken(email.trim().toLowerCase(), otp, expiresAt));
+        System.out.println("[EMAIL-SERVICE] Đã gửi mã xác nhận lấy lại mật khẩu về " + email + ": MÃ LÀ [" + otp + "]");
+        return otp;
+    }
+
+    public synchronized boolean resetPasswordWithOtp(String email, String otp, String newPassword) {
+        if (email == null || otp == null || newPassword == null) return false;
+        String em = email.trim().toLowerCase();
+        ResetToken token = resetTokens.get(em);
+        if (token == null) return false;
+
+        if (System.currentTimeMillis() > token.expiresAt) {
+            resetTokens.remove(em);
+            return false; // Hết hạn
+        }
+
+        if (!token.otp.equals(otp.trim())) {
+            return false; // Mã sai
+        }
+
+        User u = getUserByEmail(em);
+        if (u == null) return false;
+
+        u.setPassword(newPassword.trim());
+        resetTokens.remove(em);
+        System.out.println("[EMAIL-SERVICE] Đổi mật khẩu thành công cho tài khoản " + u.getUsername() + " (" + em + ")");
+        return true;
     }
 
     public User getUserById(int id) {
