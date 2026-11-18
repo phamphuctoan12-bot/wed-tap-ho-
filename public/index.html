@@ -61,25 +61,116 @@
     <!-- Main Content -->
     <div class="container py-4">
 
-        <!-- Hero Banner -->
-        <div class="hero-banner">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h2 class="fw-bold mb-2">🎉 Mua Tạp Hóa Trực Tuyến - Giao Hàng Siêu Tốc</h2>
-                    <p class="mb-3 opacity-90">Đầy đủ các loại đồ uống, mì gói, gia vị, đồ gia dụng tươi mới mỗi ngày. Giá bình dân, bảo đảm chất lượng & hạn sử dụng rõ ràng!</p>
-                    <span class="badge bg-warning text-dark px-3 py-2 fs-6">🚚 Miễn phí giao hàng cho đơn từ 150.000đ</span>
+        <!-- Hero Banner Slider -->
+        <div id="heroBannerSlider" class="hero-banner-slider mb-3">
+            <div class="slide active" style="background: linear-gradient(135deg,#c0392b,#e74c3c)">
+                <div class="row align-items-center h-100">
+                    <div class="col-md-8">
+                        <div class="badge bg-warning text-dark mb-2 px-3 py-1 fs-6">🔥 ƯU ĐÃI THÁNG 11</div>
+                        <h2 class="fw-bold mb-2 text-white">Mua Tạp Hóa Trực Tuyến<br>– Giao Hàng Siêu Tốc!</h2>
+                        <p class="mb-3 opacity-90 text-white">Đầy đủ mì gói, nước uống, gia vị, hóa phẩm giá bình dân. Hàng chính hãng, HSD rõ ràng!</p>
+                        <span class="badge bg-warning text-dark px-3 py-2 fs-6">🚚 Miễn phí giao hàng từ 150.000đ</span>
+                    </div>
+                    <div class="col-md-4 text-center d-none d-md-flex align-items-center justify-content-center fs-1" style="gap:8px">
+                        <span style="font-size:3.5rem">🛒</span><span style="font-size:3.5rem">🍜</span><span style="font-size:3.5rem">🥤</span>
+                    </div>
                 </div>
-                <div class="col-md-4 text-center d-none d-md-block fs-1">
-                    🛒 🍜 🥤 🧂 🍫
+            </div>
+            <div class="slide" style="background: linear-gradient(135deg,#1a6e3a,#20c997)">
+                <div class="row align-items-center h-100">
+                    <div class="col-md-8">
+                        <div class="badge bg-danger mb-2 px-3 py-1 fs-6">⚡ FLASH SALE HÔM NAY</div>
+                        <h2 class="fw-bold mb-2 text-white">Săn Hàng Giá Rẻ<br>Mỗi Ngày Tại Tiệm!</h2>
+                        <p class="mb-3 opacity-90 text-white">Flash Sale mỗi ngày – giảm đến 30% hàng tiêu dùng thiết yếu. Số lượng có hạn!</p>
+                        <button class="btn btn-warning fw-bold px-4" onclick="document.getElementById('flashSaleSection').scrollIntoView({behavior:'smooth'})">Xem Flash Sale →</button>
+                    </div>
+                    <div class="col-md-4 text-center d-none d-md-flex align-items-center justify-content-center" style="gap:8px">
+                        <span style="font-size:3.5rem">🧂</span><span style="font-size:3.5rem">🍫</span><span style="font-size:3.5rem">🧼</span>
+                    </div>
                 </div>
+            </div>
+            <div class="slide" style="background: linear-gradient(135deg,#154360,#2980b9)">
+                <div class="row align-items-center h-100">
+                    <div class="col-md-8">
+                        <div class="badge bg-success mb-2 px-3 py-1 fs-6">🏪 MÁY THU NGÂN POS</div>
+                        <h2 class="fw-bold mb-2 text-white">Quét Mã Vạch<br>Tính Tiền Ngay!</h2>
+                        <p class="mb-3 opacity-90 text-white">Hệ thống POS hiện đại – quét barcode sản phẩm, tính tiền thối tự động cực nhanh.</p>
+                        <button class="btn btn-warning fw-bold px-4" onclick="openProductPosScannerModal()">📷 Mở Máy Thu Ngân →</button>
+                    </div>
+                    <div class="col-md-4 text-center d-none d-md-flex align-items-center justify-content-center">
+                        <span style="font-size:5rem">📱</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Dots -->
+            <div class="slider-dots">
+                <span class="dot active" onclick="goToSlide(0)"></span>
+                <span class="dot" onclick="goToSlide(1)"></span>
+                <span class="dot" onclick="goToSlide(2)"></span>
+            </div>
+        </div>
+
+        <!-- Trust Badges Row -->
+        <div class="trust-badge-row mb-3">
+            <div class="trust-item"><span>🚚</span><div><b>Giao Hàng Nhanh</b><small>Trong 1-3 tiếng</small></div></div>
+            <div class="trust-item"><span>✅</span><div><b>Hàng Chính Hãng</b><small>100% đảm bảo</small></div></div>
+            <div class="trust-item"><span>🔄</span><div><b>Đổi Trả Dễ Dàng</b><small>Trong 24 giờ</small></div></div>
+            <div class="trust-item"><span>🎁</span><div><b>Nhiều Ưu Đãi</b><small>Voucher mỗi ngày</small></div></div>
+            <div class="trust-item"><span>📞</span><div><b>Hỗ Trợ 24/7</b><small>0900.000.001</small></div></div>
+        </div>
+
+        <!-- Quick Category Icons ("Góc hàng") -->
+        <div class="quick-cat-section mb-3">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-grid-fill text-danger me-1"></i> NGÀNH HÀNG TẠP HÓA</h6>
+            <div class="quick-cat-grid">
+                <div class="quick-cat-item" onclick="filterByCategory(1,null)">
+                    <div class="quick-cat-icon" style="background:#fff3e0">🍜</div>
+                    <span>Góc Mì Gói</span>
+                </div>
+                <div class="quick-cat-item" onclick="filterByCategory(2,null)">
+                    <div class="quick-cat-icon" style="background:#e3f2fd">🥤</div>
+                    <span>Góc Đồ Uống</span>
+                </div>
+                <div class="quick-cat-item" onclick="filterByCategory(3,null)">
+                    <div class="quick-cat-icon" style="background:#f3e5f5">🧂</div>
+                    <span>Góc Nhà Bếp</span>
+                </div>
+                <div class="quick-cat-item" onclick="filterByCategory(4,null)">
+                    <div class="quick-cat-icon" style="background:#fce4ec">🍪</div>
+                    <span>Góc Bánh Kẹo</span>
+                </div>
+                <div class="quick-cat-item" onclick="filterByCategory(5,null)">
+                    <div class="quick-cat-icon" style="background:#e8f5e9">🧼</div>
+                    <span>Góc Nhà Cửa</span>
+                </div>
+                <div class="quick-cat-item" onclick="filterByCategory(0,null)">
+                    <div class="quick-cat-icon" style="background:#fafafa">🛒</div>
+                    <span>Tất Cả</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FLASH SALE Section -->
+        <div id="flashSaleSection" class="flash-sale-section mb-4">
+            <div class="flash-sale-header">
+                <span class="flash-icon">⚡</span>
+                <span class="flash-title">FLASH SALE</span>
+                <div class="flash-countdown" id="flashCountdown">
+                    <div class="cd-block"><span id="cdH">02</span><small>GIỜ</small></div>
+                    <div class="cd-sep">:</div>
+                    <div class="cd-block"><span id="cdM">30</span><small>PHÚT</small></div>
+                    <div class="cd-sep">:</div>
+                    <div class="cd-block"><span id="cdS">00</span><small>GIÂY</small></div>
+                </div>
+                <span class="flash-badge">Giảm đến 30%</span>
+            </div>
+            <div class="flash-products-row" id="flashProductsRow">
+                <!-- Flash sale items injected by JS -->
             </div>
         </div>
 
         <!-- Category Pills Filter -->
         <div class="mb-3">
-            <div class="d-flex align-items-center mb-2">
-                <h5 class="fw-bold mb-0 me-3"><i class="bi bi-grid-fill text-success me-1"></i> Danh Mục Hàng Tạp Hóa:</h5>
-            </div>
             <div id="categoryContainer" class="d-flex flex-wrap">
                 <button class="category-btn active" onclick="filterByCategory(0, this)">✨ Tất Cả Mặt Hàng</button>
                 <!-- Categories loaded via JS -->
@@ -97,15 +188,12 @@
                     <option value="50k-100k">50.000 - 100.000 đ</option>
                     <option value=">100k">Trên 100.000 đ</option>
                 </select>
-
                 <select id="sortBy" class="form-select form-select-sm" style="width: 170px;" onchange="applyFilters()">
                     <option value="">Sắp xếp mặc định</option>
                     <option value="price_asc">Giá tăng dần</option>
                     <option value="price_desc">Giá giảm dần</option>
                 </select>
             </div>
-
-            <!-- Voucher Banner Ticker -->
             <div class="small bg-warning-subtle text-dark px-3 py-1 rounded-pill border border-warning d-flex align-items-center">
                 <span class="badge bg-danger me-2">MÃ GIẢM GIÁ</span>
                 <span>Nhập <strong>TAPHOA10</strong> (-10%), <strong>FREESHIP</strong> (-15k), <strong>GIAM20K</strong> (-20k)</span>
@@ -114,7 +202,7 @@
 
         <!-- Products List Section -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0" id="sectionTitle">Danh Sách Mặt Hàng</h5>
+            <h5 class="fw-bold mb-0" id="sectionTitle">🏪 Tất Cả Mặt Hàng</h5>
             <small class="text-muted" id="productCountText">Đang tải mặt hàng...</small>
         </div>
 
@@ -852,5 +940,6 @@
     <!-- Custom JS -->
     <script src="js/app.js"></script>
     <script src="js/chatbot.js"></script>
+    <script src="js/marketing.js"></script>
 </body>
 </html>
