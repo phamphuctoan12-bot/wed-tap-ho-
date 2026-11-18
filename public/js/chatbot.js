@@ -1,260 +1,228 @@
 // =================================================================
-// CHATBOT TRỢ LÝ ẢO THÔNG MINH - TIỆM TẠP HÓA
-// Trả lời đúng trọng tâm câu hỏi của khách hàng, văn phong tự nhiên
+// CHATBOT TƯ VẤN BÁN HÀNG TỰ NHIÊN - TIỆM TẠP HÓA
+// Trả lời như nhân viên thật: Ngắn gọn, tự nhiên, đúng trọng tâm câu hỏi!
 // =================================================================
 
 (function () {
     'use strict';
 
     // =============================================================
-    // 1. CƠ SỞ TRI THỨC ĐƯỢC TRAIN ĐÚNG TRỌNG TÂM (INTENT KNOWLEDGE)
+    // 1. CÁC TÌNH HUỐNG HỎI ĐÁP TỰ NHIÊN (INTENT RESPONSES)
     // =============================================================
     const INTENTS = [
-        // --- 1. PHÍ GIAO HÀNG (Đi thẳng vào tiền ship) ---
+        // --- 1. CHÀO HỎI (Tự nhiên, hỏi bạn muốn mua gì) ---
+        {
+            id: 'chao_hoi',
+            priority: 15,
+            phrases: [
+                'chao ban', 'chao', 'xin chao', 'hello', 'hi', 'alo', 'shop oi', 
+                'ad oi', 'ban oi', 'tiem oi', 'alo shop', 'chao shop', 'e bot', 'hey'
+            ],
+            reply: () => `Dạ chào bạn! Hôm nay bạn muốn tìm mua món gì ạ? Tiệm em có đầy đủ mì gói, nước ngọt, bia rượu, bánh kẹo và gia vị giao tận nơi nhé! 😊`
+        },
+
+        // --- 2. PHÍ GIAO HÀNG (Đi thẳng vào tiền ship) ---
         {
             id: 'phi_ship',
-            priority: 10,
+            priority: 12,
             phrases: [
                 'phi giao hang', 'phi ship', 'tien ship', 'tien giao', 'ship bao nhieu', 
                 'gia ship', 'cuoc ship', 'cuoc giao', 'phi van chuyen', 'ship ton bao nhieu',
                 'ship dat khong', 'ship het bao nhieu', 'tien van chuyen'
             ],
-            reply: () => `🚚 <b>Phí giao hàng tại Tiệm Tạp Hóa:</b><br><br>
-            🎉 <b>MIỄN PHÍ SHIP 100%</b> cho mọi đơn hàng từ <b>150.000đ</b> trở lên!<br>
-            💵 Đơn dưới 150.000đ: phí giao từ <b>15.000đ – 30.000đ</b> (tùy khoảng cách giao).<br><br>
-            🎁 <b>Mẹo nhỏ:</b> Bạn có thể nhập mã <code>FREESHIP</code> ở Giỏ hàng để được <b>trừ ngay 15.000đ</b> tiền ship nhé!`
+            reply: () => `Dạ phí ship bên em từ <b>15.000đ – 30.000đ</b> tùy khu vực, nhưng <b>đơn từ 150.000đ trở lên là được MIỄN PHÍ SHIP 100%</b> luôn bạn nhé!<br><br>💡 Bạn có thể nhập thêm mã <code>FREESHIP</code> ở giỏ hàng để được giảm 15k tiền ship nha.`
         },
 
-        // --- 2. FREESHIP / MIỄN PHÍ VẬN CHUYỂN ---
+        // --- 3. FREESHIP / MIỄN PHÍ SHIP ---
         {
             id: 'freeship',
-            priority: 9,
+            priority: 11,
             phrases: [
                 'freeship', 'co freeship khong', 'mien phi ship', 'mien phi giao hang', 
                 'duoc freeship', 'don bao nhieu thi freeship', 'bao nhieu duoc freeship',
                 'co mien phi ship khong', 'khi nao freeship'
             ],
-            reply: () => `🆓 <b>Dạ có Freeship bạn nhé!</b><br><br>
-            Chỉ cần đơn hàng của bạn đạt từ <b>150.000đ</b> là tiệm sẽ <b>miễn phí giao hàng hoàn toàn (0đ)</b> tận nhà ạ!<br><br>
-            💡 Ngoài ra, tiệm đang có mã <code>FREESHIP</code> giảm ngay 15.000đ phí giao khi áp dụng tại giỏ hàng!`
+            reply: () => `Dạ có bạn nha! Đơn hàng chỉ cần đạt từ <b>150.000đ</b> là tiệm <b>miễn phí giao hàng hoàn toàn (0đ)</b> tận nhà cho bạn rồi ạ! Nếu đơn dưới 150k bạn nhập mã <code>FREESHIP</code> để được giảm 15k phí giao nhé.`
         },
 
-        // --- 3. THỜI GIAN GIAO HÀNG ---
+        // --- 4. THỜI GIAN GIAO HÀNG (Đi thẳng vào mấy tiếng) ---
         {
             id: 'thoi_gian_giao',
-            priority: 9,
+            priority: 11,
             phrases: [
                 'bao lau thi den', 'bao lau nhan duoc', 'thoi gian giao', 'may tieng', 
                 'khi nao giao', 'khi nao nhan duoc', 'giao nhanh khong', 'giao trong ngay khong',
-                'co giao lien khong', 'may phut', 'ship lau khong'
+                'co giao lien khong', 'may phut', 'ship lau khong', 'giao mat bao lau'
             ],
-            reply: () => `⏱️ <b>Thời gian giao hàng:</b><br><br>
-            Tiệm giao hàng <b>siêu tốc chỉ trong vòng 1 – 3 tiếng</b> trong nội thành ngay sau khi bạn đặt đơn thành công!<br><br>
-            🛵 Shipper sẽ gọi điện thoại cho bạn trước khi giao tận cửa nhé!`
+            reply: () => `Dạ tiệm giao nhanh trong vòng <b>1 – 3 tiếng</b> là tới tận nơi bạn nhé! Trước khi giao shipper sẽ gọi điện thoại báo bạn trước ạ. 🛵`
         },
 
-        // --- 4. KHU VỰC / PHẠM VI GIAO HÀNG ---
+        // --- 5. KHU VỰC GIAO HÀNG ---
         {
             id: 'khu_vuc_giao',
-            priority: 8,
+            priority: 9,
             phrases: [
                 'giao o dau', 'giao khu vuc nao', 'co giao tan noi khong', 'ship tan nha khong',
                 'giao quan nao', 'co ship tinh khong', 'pham vi giao'
             ],
-            reply: () => `📍 <b>Phạm vi giao hàng:</b><br><br>
-            Tiệm giao hàng <b>tận nơi, tận cửa</b> theo đúng địa chỉ bạn nhập khi đặt hàng trong toàn khu vực nội thành.<br>
-            Đơn hàng được đóng gói cẩn thận và giao tận tay bạn ạ!`
+            reply: () => `Dạ bên em nhận giao hàng tận nơi đến tận cửa nhà bạn trong toàn khu vực nội thành nhé! Bạn chỉ cần điền địa chỉ lúc đặt là shipper giao tới tận tay ạ.`
         },
 
-        // --- 5. MÃ GIẢM GIÁ / VOUCHER ---
+        // --- 6. MÃ GIẢM GIÁ / VOUCHER ---
         {
             id: 'voucher',
-            priority: 9,
+            priority: 11,
             phrases: [
                 'ma giam gia', 'voucher', 'coupon', 'ma khuyen mai', 'khuyen mai', 
-                'co giam gia khong', 'ma freeship', 'xin ma giam', 'ma taphoa10', 'giam20k'
+                'co giam gia khong', 'ma freeship', 'xin ma giam', 'ma taphoa10', 'giam20k',
+                'giam gia', 'uu dai', 'co ma giam khong', 'ma giam', 'duoc giam gia'
             ],
-            reply: () => `🎁 <b>Các mã giảm giá hiện có tại tiệm:</b><br><br>
-            🏷️ <code>TAPHOA10</code> → Giảm ngay <b>10%</b> tổng giá trị đơn hàng<br>
-            🚚 <code>FREESHIP</code> → Giảm <b>15.000đ</b> phí vận chuyển<br>
-            💸 <code>GIAM20K</code> → Giảm thẳng <b>20.000đ</b> cho đơn từ 100k<br><br>
-            👉 <b>Cách dùng:</b> Vào 🛒 <b>Giỏ Hàng</b> → nhập mã vào ô "Nhập mã giảm giá" → bấm <b>Áp dụng</b> là được trừ tiền ngay!`
+            reply: () => `Dạ tiệm đang có 3 mã giảm giá này bạn dùng ngay nhé:<br>
+            • <code>TAPHOA10</code> : Giảm 10% tổng đơn<br>
+            • <code>FREESHIP</code> : Giảm 15.000đ phí giao hàng<br>
+            • <code>GIAM20K</code> : Giảm 20.000đ cho đơn từ 100k<br>
+            Bạn vào Giỏ Hàng nhập mã là được trừ tiền ngay nha!`
         },
 
-        // --- 6. CÁCH ĐẶT HÀNG ---
+        // --- 7. CÓ BIA HOẶC RƯỢU KHÔNG ---
+        {
+            id: 'bia_ruou',
+            priority: 11,
+            phrases: [
+                'co bia khong', 'co ruou khong', 'bia gi', 'ruou gi', 'bia tiger', 
+                'bia heineken', 'bia larue', 'bia sai gon', 'vang da lat', 'vodka', 'soju', 'co bia gi'
+            ],
+            reply: () => `Dạ tiệm có đầy đủ bia và rượu bạn nhé!<br>
+            🍺 <b>Bia:</b> Tiger Crystal lon cao (19.5k), Heineken Silver (21.5k), Bia Larue (12.5k), Sài Gòn Special (16.5k).<br>
+            🍷 <b>Rượu:</b> Vang Đà Lạt Classic (95k), Vodka Hà Nội 39.5° (85k), Soju Jinro Chamisul (65k).<br>
+            Bạn muốn lấy loại nào em lấy cho bạn nha?`
+        },
+
+        // --- 8. CÁCH ĐẶT HÀNG ---
         {
             id: 'cach_dat_hang',
-            priority: 8,
+            priority: 10,
             phrases: [
                 'cach dat hang', 'cach mua hang', 'lam sao de mua', 'huong dan dat hang', 
                 'dat hang the nao', 'mua the nao', 'cach order', 'muon mua hang'
             ],
-            reply: () => `🛒 <b>Cách đặt hàng siêu nhanh qua 3 bước:</b><br><br>
-            1️⃣ Bấm nút <b>"Chọn mua"</b> tại sản phẩm bạn thích trên web.<br>
-            2️⃣ Bấm vào 🛒 <b>Giỏ Hàng</b> góc trên bên phải để kiểm tra.<br>
-            3️⃣ Nhập tên, địa chỉ, số điện thoại rồi bấm <b>"Xác Nhận Đặt Hàng"</b> ✅<br><br>
-            💡 Bạn có thể đặt mua ngay mà <b>không bắt buộc phải đăng nhập</b> tài khoản nhé!`
+            reply: () => `Dạ đặt dễ lắm bạn ơi! Bạn chỉ cần bấm <b>"Chọn mua"</b> sản phẩm trên web, rồi bấm vào 🛒 <b>Giỏ Hàng</b> điền tên, địa chỉ, số điện thoại rồi bấm <b>"Xác nhận đặt hàng"</b> là xong ạ! Không cần đăng nhập tài khoản cũng mua được nhé.`
         },
 
-        // --- 7. PHƯƠNG THỨC THANH TOÁN / MOMO ---
+        // --- 9. PHƯƠNG THỨC THANH TOÁN / MOMO ---
         {
             id: 'thanh_toan',
-            priority: 8,
+            priority: 10,
             phrases: [
                 'thanh toan', 'phuong thuc thanh toan', 'co tra tien mat khong', 'cod', 
                 'tra tien khi nhan hang', 'chuyen khoan', 'momo', 'quet ma momo', 'quet ma pos'
             ],
-            reply: () => `💳 <b>Phương thức thanh toán linh hoạt:</b><br><br>
-            💵 <b>1. Tiền mặt khi nhận hàng (COD):</b> Phổ biến nhất, nhận hàng kiểm tra rồi mới trả tiền cho shipper.<br>
-            📱 <b>2. Quét mã MoMo / Chuyển khoản:</b> Quét mã QR MoMo của chủ tiệm (<b>PHẠM PHÚC TOÁN</b>) ngay khi đặt hàng.<br>
-            🏪 <b>3. Thanh toán tại quầy POS:</b> Khách ghé trực tiếp tiệm quét mã vạch và thanh toán tiện lợi!`
+            reply: () => `Dạ bên em nhận <b>tiền mặt khi nhận hàng (COD)</b> hoặc <b>quét mã MoMo</b> (chủ tiệm: Phạm Phúc Toàn) đều được bạn nhé! Bạn nhận hàng kiểm tra thoải mái rồi mới thanh toán ạ.`
         },
 
-        // --- 8. GIỜ MỞ CỬA / THỜI GIAN HOẠT ĐỘNG ---
+        // --- 10. GIỜ MỞ CỬA ---
         {
             id: 'gio_mo_cua',
-            priority: 9,
+            priority: 10,
             phrases: [
-                'gio mo cua', 'may gio mo', 'may gio dong', 'mo cua luc nao', 
-                'dong cua chua', 'may gio ban', 'thoi gian lam viec', 'chu nhat co mo khong'
+                'gio mo cua', 'mo cua', 'may gio mo', 'may gio dong', 'mo cua luc nao', 
+                'dong cua chua', 'may gio ban', 'thoi gian lam viec', 'chu nhat co mo khong',
+                'mo cua may gio', 'may gio mo cua', 'khi nao mo cua', 'dong cua'
             ],
-            reply: () => `⏰ <b>Giờ mở cửa hoạt động:</b><br><br>
-            Tiệm mở cửa từ <b>6:00 sáng đến 22:00 đêm</b> tất cả các ngày trong tuần (từ Thứ 2 đến Chủ Nhật, kể cả ngày lễ).<br>
-            Website luôn tiếp nhận đơn hàng online <b>24/7</b> bạn nhé!`
+            reply: () => `Dạ tiệm mở cửa từ <b>6:00 sáng đến 22:00 đêm</b> tất cả các ngày trong tuần (mở cả Thứ 7 và Chủ Nhật luôn bạn nhé)! Đặt trên web lúc nào bên em cũng tiếp nhận đơn ạ.`
         },
 
-        // --- 9. LIÊN HỆ / SỐ ĐIỆN THOẠI / HOTLINE / ZALO ---
+        // --- 11. SỐ ĐIỆN THOẠI / HOTLINE / ZALO ---
         {
             id: 'lien_he',
-            priority: 9,
+            priority: 10,
             phrases: [
                 'so dien thoai', 'sdt', 'hotline', 'so hotline', 'zalo', 
-                'lien he ai', 'goi cho ai', 'so chu tiem', 'lien lac', 'dien thoai'
+                'lien he ai', 'goi cho ai', 'so chu tiem', 'lien lac', 'dien thoai', 'lien he'
             ],
-            reply: () => `📞 <b>Thông tin liên hệ chủ tiệm:</b><br><br>
-            📱 Hotline / Zalo: <b>0862.261.874</b> (Chủ tiệm: <b>Phạm Phúc Toàn</b>)<br>
-            💬 Nhắn Zalo: <a href="https://zalo.me/0862261874" target="_blank" style="color:#198754;font-weight:bold;">zalo.me/0862261874</a><br>
-            ⏰ Hỗ trợ tư vấn và giải đáp: <b>6:00 – 22:00</b> mỗi ngày!`
+            reply: () => `Dạ số điện thoại và Zalo của chủ tiệm là <b>0862.261.874</b> (Phạm Phúc Toàn). Bạn cần hỗ trợ gì cứ gọi hoặc nhắn tin Zalo bất cứ lúc nào nha!`
         },
 
-        // --- 10. ĐỊA CHỈ CỬA HÀNG ---
+        // --- 12. ĐỊA CHỈ TIỆM ---
         {
             id: 'dia_chi',
-            priority: 8,
-            phrases: [
-                'dia chi', 'tiem o dau', 'cua hang o dau', 'o dau', 
-                'dia chi o dau', 'cho nao', 'vi tri cua hang'
-            ],
-            reply: () => `🏠 <b>Địa chỉ Tiệm Tạp Hóa:</b><br><br>
-            Cửa hàng Tạp Hóa phục vụ tại địa bàn nội thành và toàn bộ đơn online qua website: <b>http://taphoa.local:8080/</b>.<br>
-            Bạn chỉ cần bấm đặt hàng trên web, tiệm sẽ giao tận nơi đến tận nhà bạn trong 1–3 tiếng ạ!`
-        },
-
-        // --- 11. BIA VÀ RƯỢU (Sản phẩm mới cập nhật) ---
-        {
-            id: 'bia_ruou',
             priority: 9,
             phrases: [
-                'co bia khong', 'co ruou khong', 'bia gi', 'ruou gi', 'bia tiger', 
-                'bia heineken', 'bia larue', 'bia sai gon', 'vang da lat', 'vodka', 'soju'
+                'dia chi', 'tiem o dau', 'cua hang o dau', 'o dau', 'shop o dau',
+                'dia chi o dau', 'cho nao', 'vi tri cua hang', 'dia chi cua hang'
             ],
-            reply: () => `🍺 <b>Góc Bia & Rượu tại Tiệm Tạp Hóa:</b><br><br>
-            🐯 <b>Bia Larue</b> lon 330ml: <b>12.500đ</b><br>
-            🐅 <b>Bia Tiger Crystal</b> lon cao 330ml: <b>19.500đ</b><br>
-            ⭐ <b>Bia Heineken Silver</b> lon cao 330ml: <b>21.500đ</b><br>
-            🐉 <b>Bia Sài Gòn Special</b> lon 330ml: <b>16.500đ</b><br>
-            🍷 <b>Rượu Vang Đà Lạt Classic</b> đỏ 750ml: <b>95.000đ</b><br>
-            🍶 <b>Rượu Vodka Hà Nội</b> 700ml 39.5°: <b>85.000đ</b><br>
-            🍾 <b>Rượu Soju Jinro Chamisul</b> chai 360ml: <b>65.000đ</b><br><br>
-            👉 Bấm vào mục <b>"🍺 Góc Bia & Nước"</b> trên trang chủ để chọn mua ngay nhé!`
+            reply: () => `Dạ tiệm bán online giao hàng tận nơi trong 1–3 tiếng bạn nhé! Bạn ở địa chỉ nào cứ đặt trên web là bên em giao tới tận cửa ạ.`
         },
 
-        // --- 12. TÀI KHOẢN / ĐĂNG NHẬP / MẬT KHẨU ---
+        // --- 13. TÀI KHOẢN & ĐĂNG NHẬP ---
         {
             id: 'tai_khoan',
-            priority: 8,
+            priority: 9,
             phrases: [
                 'tai khoan', 'dang nhap', 'dang ky', 'mat khau', 'login', 
                 'tai khoan admin', 'mk admin', 'admin pass', 'tao tai khoan'
             ],
-            reply: () => `🔐 <b>Thông tin Đăng Nhập & Tài Khoản:</b><br><br>
-            👤 <b>Khách hàng:</b> Có thể tạo tài khoản mới bằng Gmail, mật khẩu yêu cầu có cả chữ, số và ký tự đặc biệt.<br>
-            🔑 <b>Chủ tiệm (Admin):</b> Quản lý đơn hàng, nhập xuất kho tại trang <code>/admin.html</code>.<br><br>
-            💡 Bạn có thể mua hàng trực tiếp mà không cần đăng nhập tài khoản nhé!`
+            reply: () => `Dạ bạn có thể bấm vào nút <b>"Đăng Nhập / Đăng Ký"</b> ở góc phải để tạo tài khoản mới bằng Gmail nha. Mật khẩu cần có cả chữ, số và ký tự đặc biệt để bảo mật ạ. Mà bạn không cần đăng nhập vẫn đặt hàng được bình thường nhé!`
         },
 
-        // --- 13. QUÊN MẬT KHẨU ---
+        // --- 14. QUÊN MẬT KHẨU ---
         {
             id: 'quen_mat_khau',
-            priority: 9,
+            priority: 11,
             phrases: [
                 'quen mat khau', 'quen pass', 'lay lai mat khau', 'mat mat khau', 
                 'doi mat khau', 'reset mat khau', 'quen mk'
             ],
-            reply: () => `🔑 <b>Cách lấy lại mật khẩu:</b><br><br>
-            1️⃣ Mở cửa sổ <b>Đăng Nhập</b> ➔ Bấm vào dòng <b>"Quên mật khẩu?"</b>.<br>
-            2️⃣ Nhập địa chỉ <b>Gmail</b> bạn đã đăng ký để hệ thống gửi liên kết đặt lại mật khẩu mới.<br>
-            3️⃣ Hoặc liên hệ trực tiếp hotline / Zalo: <b>0862.261.874</b> để được chủ tiệm hỗ trợ cấp lại ngay nhé!`
+            reply: () => `Dạ bạn bấm vào cửa sổ Đăng Nhập rồi chọn <b>"Quên mật khẩu?"</b> để nhập Gmail nhận hướng dẫn lấy lại, hoặc gọi trực tiếp Zalo <b>0862.261.874</b> để chủ tiệm cấp lại mật khẩu cho bạn ngay nhé!`
         },
 
-        // --- 14. ĐỔI TRẢ HÀNG / BẢO HÀNH ---
+        // --- 15. ĐỔI TRẢ HÀNG ---
         {
             id: 'doi_tra',
-            priority: 8,
+            priority: 9,
             phrases: [
                 'doi tra', 'tra hang', 'hang loi', 'hang hong', 'het han', 
                 'can date', 'doi hang', 'chinh sach doi tra'
             ],
-            reply: () => `🔄 <b>Chính sách đổi trả bảo đảm 100%:</b><br><br>
-            ✅ Tiệm hỗ trợ <b>đổi trả miễn phí trong vòng 24 giờ</b> kể từ khi nhận hàng.<br>
-            ✅ Áp dụng khi: Hàng bị dập vỡ khi vận chuyển, giao sai mẫu, hoặc lỗi từ nhà sản xuất.<br>
-            📸 Bạn chỉ cần chụp ảnh sản phẩm và nhắn qua Zalo <b>0862.261.874</b> là tiệm giải quyết ngay lập tức ạ!`
+            reply: () => `Dạ bạn yên tâm nhé, nếu hàng có vấn đề gì tiệm hỗ trợ <b>đổi trả miễn phí trong vòng 24 giờ</b> ạ! Bạn chụp hình rồi nhắn qua Zalo <b>0862.261.874</b> là bên em đổi mới ngay lập tức cho bạn.`
         },
 
-        // --- 15. MÁY QUÉT MÃ VẠCH POS ---
+        // --- 16. MÁY QUÉT POS MÃ VẠCH ---
         {
             id: 'quet_ma_pos',
-            priority: 8,
+            priority: 9,
             phrases: [
                 'quet ma', 'ma vach', 'barcode', 'may pos', 'camera', 
                 'quet barcode', 'tinh tien pos', 'may thu ngan'
             ],
-            reply: () => `📷 <b>Máy quét mã vạch POS:</b><br><br>
-            Bấm vào nút màu vàng <b>[ 📷 Quét Mã Tính Tiền (POS) ]</b> trên thanh menu.<br>
-            Hệ thống hỗ trợ quét mã vạch qua Webcam máy tính, camera điện thoại hoặc tải ảnh chụp barcode để tự động thêm vào đơn và tính tiền thối cực nhanh!`
-        },
-
-        // --- 16. CHÀO HỎI NGẮN GỌN ---
-        {
-            id: 'chao_hoi',
-            priority: 5,
-            phrases: [
-                'xin chao', 'hello', 'hi', 'chao', 'hey', 'alo', 'shop oi', 'ad oi', 'bat dau'
-            ],
-            reply: () => `👋 <b>Xin chào bạn!</b> Tôi là Trợ Lý Tạp Hóa.<br><br>
-            Tôi có thể giúp bạn giải đáp nhanh về:<br>
-            • 🚚 <span class="chat-quick" onclick="chatSend('phí giao hàng')">Phí giao hàng & Freeship</span><br>
-            • ⏱️ <span class="chat-quick" onclick="chatSend('thời gian giao hàng')">Thời gian giao hàng</span><br>
-            • 🎁 <span class="chat-quick" onclick="chatSend('mã giảm giá')">Mã giảm giá hot</span><br>
-            • 🍺 <span class="chat-quick" onclick="chatSend('có bia rượu không')">Bia, Rượu & Đồ uống</span><br>
-            • 🛒 <span class="chat-quick" onclick="chatSend('cách đặt hàng')">Cách thức đặt hàng</span>`
+            reply: () => `Dạ bạn bấm vào nút vàng <b>[ 📷 Quét Mã Tính Tiền (POS) ]</b> trên menu là có thể dùng camera điện thoại hoặc webcam để quét mã vạch sản phẩm tính tiền tự động cực nhanh nhé!`
         },
 
         // --- 17. CẢM ƠN ---
         {
             id: 'cam_on',
-            priority: 5,
+            priority: 8,
             phrases: [
-                'cam on', 'thanks', 'thank you', 'ok cam on', 'tuyet voi', 'da cam on', 'duoc roi'
+                'cam on', 'thanks', 'thank you', 'ok cam on', 'tuyet voi', 'da cam on', 'duoc roi', 'ok shop'
             ],
-            reply: () => `😊 Dạ không có gì ạ! Rất vui được hỗ trợ bạn.<br><br>
-            Nếu cần thêm bất kỳ thông tin nào, bạn cứ nhắn tin tiếp nhé. Chúc bạn một ngày mua sắm thật vui vẻ tại <b>Tiệm Tạp Hóa</b>! 🏪💚`
+            reply: () => `Dạ không có gì ạ! Bạn cần thêm món gì cứ nhắn em nhé, chúc bạn mua sắm thật vui vẻ tại Tiệm Tạp Hóa! 😊💚`
         }
     ];
 
     // =============================================================
-    // 2. TÌM KIẾM SẢN PHẨM TRỰC TIẾP TRONG KHO (DYNAMIC PRODUCT MATCH)
+    // 2. TÌM KIẾM SẢN PHẨM TRỰC TIẾP THEO TÊN (DYNAMIC LOOKUP)
     // =============================================================
+    function removeAccents(str) {
+        return (str || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[đĐ]/g, 'd')
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
     function searchProductsDynamically(keywordNorm) {
         if (typeof window !== 'undefined' && Array.isArray(window.allProducts) && window.allProducts.length > 0) {
             const matches = window.allProducts.filter(p => {
@@ -270,50 +238,36 @@
     }
 
     // =============================================================
-    // 3. THUẬT TOÁN ĐỐI SOÁT TRỌNG TÂM CÂU HỎI (SCORE-BASED MATCHER)
+    // 3. THUẬT TOÁN XỬ LÝ CÂU TRẢ LỜI ĐÚNG TRỌNG TÂM
     // =============================================================
-    function removeAccents(str) {
-        return (str || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[đĐ]/g, 'd')
-            .replace(/[^a-z0-9\s]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-    }
-
     function getBotReply(userText) {
         const textNorm = removeAccents(userText);
         if (!textNorm) return 'Dạ bạn cần em hỗ trợ thông tin gì ạ?';
 
-        // 1. Kiểm tra xem khách có đang hỏi giá hoặc hỏi còn sản phẩm cụ thể nào không
-        // Ví dụ: "có bia tiger không", "giá mì hảo hảo", "còn sting không", "coca bao nhiêu"
-        const productKeywords = [
+        // 1. Kiểm tra nếu khách hỏi tên một sản phẩm cụ thể
+        const specificProducts = [
             'tiger', 'larue', 'heineken', 'sai gon', 'vodka', 'soju', 'vang da lat',
             'hao hao', 'omachi', 'de nhat', 'gao st25', 'coca', 'sting', 'vinamilk',
             'lavie', 'simply', 'nam ngu', 'knorr', 'tam thai tu', 'chocopie', 'cosy',
             'ostar', 'omo', 'sunlight'
         ];
 
-        for (const kw of productKeywords) {
+        for (const kw of specificProducts) {
             if (textNorm.includes(kw)) {
                 const found = searchProductsDynamically(kw);
                 if (found && found.length > 0) {
-                    let res = `🏪 <b>Dạ tiệm có sẵn mặt hàng này bạn nhé:</b><br><br>`;
+                    let res = `Dạ tiệm có sẵn mặt hàng này bạn nhé:<br><br>`;
                     found.forEach(p => {
                         const priceStr = Number(p.price).toLocaleString('vi-VN');
-                        res += `• <b>${escapeHtml(p.name)}</b><br>`;
-                        res += `  💰 Giá: <b>${priceStr} ₫</b> / ${escapeHtml(p.unit || 'món')}<br>`;
-                        res += `  📦 Tồn kho: còn <b>${p.stock}</b> ${escapeHtml(p.unit || '')} (HSD: ${escapeHtml(p.expiryDate || 'Mới')})<br><br>`;
+                        res += `• <b>${escapeHtml(p.name)}</b>: <b>${priceStr} ₫</b> / ${escapeHtml(p.unit || 'món')} (Còn ${p.stock} ${escapeHtml(p.unit || '')})<br>`;
                     });
-                    res += `👉 Bạn có thể tìm tên sản phẩm trên thanh tìm kiếm để bấm <b>"Chọn mua"</b> ngay nhé! 🛒`;
+                    res += `<br>👉 Bạn có thể tìm tên trên trang chủ để bấm <b>"Chọn mua"</b> ngay nha! 🛒`;
                     return res;
                 }
             }
         }
 
-        // 2. Tìm Intent có điểm số cao nhất (khớp cụm từ dài nhất và ưu tiên cao nhất)
+        // 2. Tìm Intent phù hợp nhất theo độ khớp cao nhất
         let bestIntent = null;
         let maxScore = 0;
 
@@ -321,7 +275,7 @@
             for (const phrase of intent.phrases) {
                 const phraseNorm = removeAccents(phrase);
                 if (textNorm.includes(phraseNorm)) {
-                    // Điểm = (độ dài cụm từ) * 2 + độ ưu tiên
+                    // Cụm từ càng dài và khớp chuẩn thì điểm càng cao
                     const score = phraseNorm.length * 2 + (intent.priority || 1);
                     if (score > maxScore) {
                         maxScore = score;
@@ -335,17 +289,14 @@
             return bestIntent.reply();
         }
 
-        // 3. Phản hồi mặc định nếu chưa hiểu rõ (ngắn gọn, lịch sự, đúng trọng tâm)
-        return `Dạ em chưa hiểu rõ ý của bạn lắm ạ. Bạn có thể hỏi cụ thể hơn như:<br><br>
-        • <span class="chat-quick" onclick="chatSend('phí giao hàng')">Phí ship bao nhiêu?</span><br>
-        • <span class="chat-quick" onclick="chatSend('thời gian giao hàng')">Giao trong bao lâu?</span><br>
-        • <span class="chat-quick" onclick="chatSend('mã giảm giá')">Có mã giảm giá nào không?</span><br>
-        • <span class="chat-quick" onclick="chatSend('có bia rượu không')">Xem danh sách bia & rượu</span><br><br>
-        Hoặc gọi trực tiếp chủ tiệm: <b>📞 0862.261.874</b> để được hỗ trợ ngay nhé!`;
+        // 3. Phản hồi tự nhiên khi chưa hiểu (không ra vẻ máy móc)
+        return `Dạ em chưa nghe rõ câu hỏi của bạn lắm ạ. Bạn cần hỏi về món nào, hay cần hỏi phí ship, thời gian giao hàng ạ? Bạn nhắn lại để em hỗ trợ nhé! Hoặc gọi trực tiếp chủ tiệm: <b>📞 0862.261.874</b> nha.`;
     }
 
+    window.getBotReply = getBotReply;
+
     // =============================================================
-    // 4. GIAO DIỆN CHATBOT (UI & STYLES)
+    // 4. GIAO DIỆN CHATBOT (UI)
     // =============================================================
     function createChatbotUI() {
         if (document.getElementById('chatbot-bubble')) return;
@@ -616,11 +567,11 @@
             <div id="chatbot-messages"></div>
 
             <div id="chatbot-quick-btns">
-                <button class="qbtn" onclick="chatSend('phí giao hàng')">🚚 Phí ship</button>
-                <button class="qbtn" onclick="chatSend('thời gian giao hàng')">⏱️ Giao bao lâu?</button>
+                <button class="qbtn" onclick="chatSend('chào bạn')">👋 Chào bạn</button>
+                <button class="qbtn" onclick="chatSend('phí giao hàng bao nhiêu')">🚚 Phí ship</button>
+                <button class="qbtn" onclick="chatSend('giao mất bao lâu')">⏱️ Giao bao lâu?</button>
+                <button class="qbtn" onclick="chatSend('có bia rượu gì')">🍺 Bia & Rượu</button>
                 <button class="qbtn" onclick="chatSend('mã giảm giá')">🎁 Mã giảm giá</button>
-                <button class="qbtn" onclick="chatSend('có bia rượu không')">🍺 Bia & Rượu</button>
-                <button class="qbtn" onclick="chatSend('thanh toán momo')">📱 MoMo</button>
                 <button class="qbtn" onclick="chatSend('số điện thoại')">📞 Hotline</button>
             </div>
 
@@ -656,13 +607,7 @@
             const msgArea = document.getElementById('chatbot-messages');
             if (!msgArea.hasChildNodes()) {
                 setTimeout(() => {
-                    appendMsg('bot', `👋 <b>Chào bạn! Em là Trợ lý Tiệm Tạp Hóa.</b><br><br>
-                    Em có thể hỗ trợ nhanh cho bạn về:<br>
-                    • 🚚 <span class="chat-quick" onclick="chatSend('phí giao hàng')">Phí ship & Mẹo freeship</span><br>
-                    • ⏱️ <span class="chat-quick" onclick="chatSend('thời gian giao hàng')">Thời gian giao hàng</span><br>
-                    • 🎁 <span class="chat-quick" onclick="chatSend('mã giảm giá')">Mã giảm giá hôm nay</span><br>
-                    • 🍺 <span class="chat-quick" onclick="chatSend('có bia rượu không')">Các loại Bia & Rượu</span><br><br>
-                    Bạn cần hỏi gì cứ gõ vào đây nhé, em sẽ trả lời ngay ạ! 😊`);
+                    appendMsg('bot', `Dạ chào bạn! Hôm nay bạn muốn mua gì ạ? Cần hỏi giá hay phí ship bạn cứ nhắn em nhé! 😊`);
                 }, 200);
             }
             setTimeout(() => document.getElementById('chatbot-input')?.focus(), 350);
@@ -692,13 +637,13 @@
         msgArea.appendChild(typingEl);
         msgArea.scrollTop = msgArea.scrollHeight;
 
-        // Trả lời sau 400 - 700ms tạo cảm giác tự nhiên
+        // Trả lời sau 350 - 550ms rất nhanh và tự nhiên
         setTimeout(() => {
             const typing = document.getElementById('chat-typing');
             if (typing) typing.remove();
             const reply = getBotReply(text);
             appendMsg('bot', reply);
-        }, 450 + Math.random() * 250);
+        }, 350 + Math.random() * 200);
     };
 
     function appendMsg(type, html) {
