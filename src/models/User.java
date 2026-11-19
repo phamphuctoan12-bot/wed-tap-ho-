@@ -9,6 +9,7 @@ public class User {
     private String phone;
     private String address;
     private String role; // "ADMIN" hoặc "CUSTOMER"
+    private String lastLogin;
 
     public User() {}
 
@@ -51,4 +52,7 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getLastLogin() { return lastLogin != null ? lastLogin : ""; }
+    public void setLastLogin(String lastLogin) { this.lastLogin = lastLogin; }
 }

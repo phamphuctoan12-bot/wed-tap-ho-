@@ -207,6 +207,7 @@ public class DatabaseHelper {
         order1.getItems().add(new OrderItem(1, "Mì Hảo Hảo tôm chua cay 75g", "Gói", 4500, 6));
         order1.setStatus("Hoàn thành");
         order1.setUserId(2);
+        order1.setUsername("khachhang");
         order1.getItems().add(new OrderItem(1, "Mì Hảo Hảo tôm chua cay 75g", "Gói", 4500, 6));
         order1.getItems().add(new OrderItem(5, "Nước ngọt Coca-Cola lon 320ml", "Lon", 10000, 5));
         order1.setTotalAmount(77000);
@@ -215,6 +216,7 @@ public class DatabaseHelper {
         Order order2 = new Order();
         order2.setId(2);
         order2.setUserId(2);
+        order2.setUsername("khachhang");
         order2.setCustomerName("Trần Thị Mai");
         order2.setPhone("0987654321");
         order2.setAddress("45 Lê Lợi, Phường Bến Nghé, Quận 1");
@@ -364,6 +366,14 @@ public class DatabaseHelper {
     public Order createOrder(Order order) {
         int orderId = orderIdGen.incrementAndGet();
         order.setId(orderId);
+
+        // Gắn username nếu tài khoản đã đăng nhập
+        if (order.getUserId() > 0 && (order.getUsername() == null || order.getUsername().isEmpty())) {
+            User u = getUserById(order.getUserId());
+            if (u != null) {
+                order.setUsername(u.getUsername());
+            }
+        }
         
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         order.setOrderDate(LocalDateTime.now().format(dtf));
@@ -386,6 +396,11 @@ public class DatabaseHelper {
         }
         order.setTotalAmount(total);
         orders.put(orderId, order);
+        System.out.println("[SQL / DON_HANG] Don #" + orderId + 
+            " | Tai khoan: " + (order.getUsername() != null && !order.getUsername().isEmpty() ? order.getUsername() : "(Khach vang lai)") + 
+            " | Khach nhan: " + order.getCustomerName() + 
+            " | SDT: " + order.getPhone() + 
+            " | Tong tien: " + String.format("%,.0f", order.getTotalAmount()) + " d");
         return order;
     }
 
@@ -495,14 +510,19 @@ public class DatabaseHelper {
         }
 
         if (user != null) {
+            boolean ok = false;
             if (user.getPassword().equals(p)) {
-                return user;
-            }
-            // Hỗ trợ khách hàng mẫu
-            if ("khachhang".equalsIgnoreCase(user.getUsername())) {
+                ok = true;
+            } else if ("khachhang".equalsIgnoreCase(user.getUsername())) {
                 if ("Khach@123".equals(p) || "123456".equals(p) || "khachhang".equalsIgnoreCase(p)) {
-                    return user;
+                    ok = true;
                 }
+            }
+            if (ok) {
+                String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                user.setLastLogin(now);
+                System.out.println("[SQL / DANG_NHAP] Nguoi dung [" + user.getUsername() + " - " + user.getFullName() + "] dang nhap luc " + now);
+                return user;
             }
         }
         return null;

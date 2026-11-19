@@ -1059,6 +1059,7 @@ async function submitOrder(e) {
 
     const orderData = {
         userId: currentUser ? currentUser.id : 0,
+        username: currentUser ? (currentUser.username || '') : '',
         customerName: document.getElementById('custName').value.trim(),
         phone: document.getElementById('custPhone').value.trim(),
         address: document.getElementById('custAddress').value.trim(),
@@ -1393,7 +1394,11 @@ async function loadAdminOrders() {
             return `
                 <tr>
                     <td><strong class="text-primary">#${o.id}</strong><br><small class="text-muted">${o.orderDate || ''}</small></td>
-                    <td><strong>${o.customerName}</strong><br><small class="text-muted"><i class="bi bi-telephone"></i> ${o.phone}</small></td>
+                    <td>
+                        <strong>${o.customerName}</strong>
+                        ${o.username ? `<br><span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.72rem;"><i class="bi bi-person-check-fill me-1"></i>TK: <strong>${o.username}</strong></span>` : `<br><span class="badge bg-light text-muted border" style="font-size: 0.7rem;"><i class="bi bi-person me-1"></i>Khách vãng lai</span>`}
+                        <br><small class="text-muted"><i class="bi bi-telephone"></i> ${o.phone}</small>
+                    </td>
                     <td><small>${o.address}</small>${o.note ? `<br><small class="text-danger">Ghi chú: ${o.note}</small>` : ''}</td>
                     <td style="max-width: 250px; font-size: 0.85rem;">${itemsHtml}</td>
                     <td><strong class="text-danger">${formatMoney(o.totalAmount)}</strong></td>

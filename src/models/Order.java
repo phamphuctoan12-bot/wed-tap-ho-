@@ -5,7 +5,8 @@ import java.util.List;
 
 public class Order {
     private int id;
-    private int userId; // ID tài khoản khách hàng (nếu đã đăng nhập)
+    private int userId; // ID tài khoản khách hàng (nếu đã đăng nhập, 0 nếu khách vãng lai)
+    private String username; // Tên đăng nhập tài khoản (nếu có)
     private String customerName;
     private String phone;
     private String address;
@@ -23,6 +24,9 @@ public class Order {
 
     public int getUserId() { return userId; }
     public void setUserId(int userId) { this.userId = userId; }
+
+    public String getUsername() { return username != null ? username : ""; }
+    public void setUsername(String username) { this.username = username; }
 
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }

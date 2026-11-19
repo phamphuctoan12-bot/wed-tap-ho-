@@ -700,9 +700,10 @@ public class WebServer {
 
     private static String orderToJson(Order o) {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("{\"id\":%d,\"userId\":%d,\"customerName\":\"%s\",\"phone\":\"%s\",\"address\":\"%s\",\"note\":\"%s\",\"totalAmount\":%.0f,\"paymentMethod\":\"%s\",\"orderDate\":\"%s\",\"status\":\"%s\",\"items\":[",
+        sb.append(String.format("{\"id\":%d,\"userId\":%d,\"username\":\"%s\",\"customerName\":\"%s\",\"phone\":\"%s\",\"address\":\"%s\",\"note\":\"%s\",\"totalAmount\":%.0f,\"paymentMethod\":\"%s\",\"orderDate\":\"%s\",\"status\":\"%s\",\"items\":[",
                 o.getId(),
                 o.getUserId(),
+                escapeJson(o.getUsername()),
                 escapeJson(o.getCustomerName()),
                 escapeJson(o.getPhone()),
                 escapeJson(o.getAddress()),
@@ -772,6 +773,7 @@ public class WebServer {
             // Lấy các trường cơ bản
             Map<String, String> map = parseSimpleJson(json);
             try { order.setUserId(Integer.parseInt(map.getOrDefault("userId", "0"))); } catch (Exception ignored) {}
+            order.setUsername(map.getOrDefault("username", ""));
             order.setCustomerName(map.getOrDefault("customerName", ""));
             order.setPhone(map.getOrDefault("phone", ""));
             order.setAddress(map.getOrDefault("address", ""));
