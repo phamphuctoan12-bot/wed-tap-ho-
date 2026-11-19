@@ -1299,6 +1299,29 @@ function printCustomerInvoice() {
     printInvoiceElement('customerInvoiceArea', 'Hóa Đơn Mua Hàng - Tiệm Tạp Hóa');
 }
 
+window.zoomQrCode = function(imgSrc) {
+    const src = imgSrc || document.getElementById('checkoutQrImage')?.src || '/images/momo_qr.jpg';
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '<span class="text-success fs-5"><i class="bi bi-qr-code-scan"></i> Mã QR Thanh Toán</span>',
+            html: `
+                <div class="text-center p-2">
+                    <img src="${src}" class="img-fluid rounded border shadow-lg bg-white p-2" style="max-height: 480px; max-width: 90vw;">
+                    <div class="mt-3 text-muted small">
+                        <i class="bi bi-phone"></i> Đưa camera App MoMo hoặc Ngân Hàng lại gần để quét ngay
+                    </div>
+                </div>
+            `,
+            showCloseButton: true,
+            confirmButtonText: 'Đóng',
+            confirmButtonColor: '#198754',
+            width: 480
+        });
+    } else {
+        window.open(src, '_blank');
+    }
+};
+
 function printAdminBill() {
     printInvoiceElement('printBillArea', 'Phiếu Gửi Hàng - Tiệm Tạp Hóa');
 }
